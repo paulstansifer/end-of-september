@@ -1,0 +1,37 @@
+$def with (real_user, username)
+
+
+<div class='sidebarsection' style='border-bottom: 1px solid Black; margin-bottom: 3px; padding-bottom: 7px;'>
+<!--
+<center>
+Articles:<br/>
+<a href='/users/$username/frontpage'><img class='inlineimg' src='/static/read.png'/>read locally</a> <br/>
+<a href='/users/$username/compose'><img class='inlineimg' src='/static/write.png'/>write</a> <br/>
+<a href='/users/$username/articles'><img class='inlineimg' src='/static/review.png'/>review what you wrote</a> <br/>
+<a href='/frontpage'><img class='inlineimg' src='/static/bestof.png'/>read the best of firegray</a> <br/>
+  <form action='/users/$username/search' >
+
+  <input class='textin' type='text' id='search' />
+  <input type='submit' value='Search recent'/>
+  <input type='submit' value='Search'/>
+  </form>
+  </center>
+-->
+  <form action='/users/$username/search' style='padding-right: 7px; padding-left: 7px;' >
+  <input class='textin' style='width: 100%; margin:1px;' type='text' id='search'/><br/>
+  <div style='float: right;'>
+  <input type='submit' value='search' style='text-align: right; margin: 1px;'/>
+    </div>
+    
+  <input type='checkbox' id='recent' checked='checked'/> <label for='recent'>recent</label>
+  <input type='checkbox' id='local' checked='checked'/> <label for='local'>local</label>
+  <span style='clear:both;'/>
+  </form>
+</div> 
+
+
+
+<center><p>
+<a href='about'>about</a> | <a href='legal'>legal</a>
+</p></center>
+</div>

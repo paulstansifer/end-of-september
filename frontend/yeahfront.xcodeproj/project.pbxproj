@@ -1,0 +1,189 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 42;
+	objects = {
+
+/* Begin PBXAggregateTarget section */
+		DA062B070D57EDE80087E0D1 /* Restart web.py */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = DA062B0D0D57EE020087E0D1 /* Build configuration list for PBXAggregateTarget "Restart web.py" */;
+			buildPhases = (
+				DA062B080D57EDFA0087E0D1 /* ShellScript */,
+			);
+			buildSettings = {
+				PRODUCT_NAME = "Restart web.py";
+			};
+			dependencies = (
+			);
+			name = "Restart web.py";
+			productName = "Restart web.py";
+		};
+/* End PBXAggregateTarget section */
+
+/* Begin PBXBuildStyle section */
+		DA7084750D2C5F0800E87815 /* Development */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Development;
+		};
+		DA7084760D2C5F0800E87815 /* Deployment */ = {
+			isa = PBXBuildStyle;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Deployment;
+		};
+/* End PBXBuildStyle section */
+
+/* Begin PBXFileReference section */
+		DA062C160D581E5D0087E0D1 /* sidebar_top.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = sidebar_top.html; path = templates/sidebar_top.html; sourceTree = "<group>"; };
+		DA062C260D5821820087E0D1 /* sidebar_bottom.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = sidebar_bottom.html; path = templates/sidebar_bottom.html; sourceTree = "<group>"; };
+		DA062C9C0D5942460087E0D1 /* render_post.py */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.python; name = render_post.py; path = render_post.py; sourceTree = "<group>"; };
+		DA062D370D5FF7330087E0D1 /* editor.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = editor.js; path = static/editor.js; sourceTree = "<group>"; };
+		DA062D3A0D5FF8140087E0D1 /* quicktags.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; name = quicktags.js; path = static/quicktags.js; sourceTree = "<group>"; };
+		DA2B62060D332B6B0023215D /* graypages.py */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.script.python; name = graypages.py; path = graypages.py; sourceTree = "<group>"; };
+		DA2B62090D332B6B0023215D /* yb.css */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; name = yb.css; path = static/yb.css; sourceTree = "<group>"; };
+		DA2B620B0D332B780023215D /* main_street.html */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text.html; name = main_street.html; path = templates/main_street.html; sourceTree = "<group>"; };
+		DA5F73510D394486009B10B5 /* chemical_elements */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = chemical_elements; sourceTree = "<group>"; };
+		DA84D9390D4AD659000737E0 /* composition.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = composition.html; path = templates/composition.html; sourceTree = "<group>"; };
+		DA84D9650D4B107D000737E0 /* vote_result.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = vote_result.html; path = templates/vote_result.html; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		DA2B620C0D332B7F0023215D /* templates */ = {
+			isa = PBXGroup;
+			children = (
+				DA2B620B0D332B780023215D /* main_street.html */,
+				DA84D9390D4AD659000737E0 /* composition.html */,
+				DA84D9650D4B107D000737E0 /* vote_result.html */,
+				DA062C160D581E5D0087E0D1 /* sidebar_top.html */,
+				DA062C260D5821820087E0D1 /* sidebar_bottom.html */,
+			);
+			name = templates;
+			sourceTree = "<group>";
+		};
+		DA5F73180D393ED1009B10B5 /* static */ = {
+			isa = PBXGroup;
+			children = (
+				DA062D3A0D5FF8140087E0D1 /* quicktags.js */,
+				DA2B62090D332B6B0023215D /* yb.css */,
+				DA062D370D5FF7330087E0D1 /* editor.js */,
+			);
+			name = static;
+			sourceTree = "<group>";
+		};
+		DA7084560D2C5E5300E87815 = {
+			isa = PBXGroup;
+			children = (
+				DA5F73180D393ED1009B10B5 /* static */,
+				DA2B620C0D332B7F0023215D /* templates */,
+				DA2B62060D332B6B0023215D /* graypages.py */,
+				DA062C9C0D5942460087E0D1 /* render_post.py */,
+				DA5F73510D394486009B10B5 /* chemical_elements */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		DA7084580D2C5E5300E87815 /* Project object */ = {
+			isa = PBXProject;
+			buildConfigurationList = DA7084590D2C5E5300E87815 /* Build configuration list for PBXProject "yeahfront" */;
+			buildSettings = {
+			};
+			buildStyles = (
+				DA7084750D2C5F0800E87815 /* Development */,
+				DA7084760D2C5F0800E87815 /* Deployment */,
+			);
+			hasScannedForEncodings = 0;
+			mainGroup = DA7084560D2C5E5300E87815;
+			projectDirPath = "";
+			targets = (
+				DA062B070D57EDE80087E0D1 /* Restart web.py */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		DA062B080D57EDFA0087E0D1 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "killall -15 Python\ncd ~/src/yeahbut/build/trunk\n./fastest_build.sh\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		DA062B0E0D57EE020087E0D1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				PRODUCT_NAME = "Restart web.py";
+			};
+			name = Debug;
+		};
+		DA062B0F0D57EE020087E0D1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = NO;
+				PRODUCT_NAME = "Restart web.py";
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
+		DA70845A0D2C5E5300E87815 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = NO;
+			};
+			name = Debug;
+		};
+		DA70845B0D2C5E5300E87815 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COPY_PHASE_STRIP = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DA062B0D0D57EE020087E0D1 /* Build configuration list for PBXAggregateTarget "Restart web.py" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA062B0E0D57EE020087E0D1 /* Debug */,
+				DA062B0F0D57EE020087E0D1 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DA7084590D2C5E5300E87815 /* Build configuration list for PBXProject "yeahfront" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA70845A0D2C5E5300E87815 /* Debug */,
+				DA70845B0D2C5E5300E87815 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DA7084580D2C5E5300E87815 /* Project object */;
+}

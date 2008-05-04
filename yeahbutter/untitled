@@ -1,0 +1,5 @@
+* Create analysis tools to measure user-side things.
+* Create validation model of ideally clustered users, normally distributed 
+  around a set of uniformly distributed centers.
+* Introduce errors to the subjective user model.
+* Introduce errors (noise users, voting randomly) to the validation model.

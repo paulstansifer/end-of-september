@@ -1,0 +1,26 @@
+$def with (real_user, username)
+
+<div class='navbar'>
+
+
+$if real_user:
+    <div style='float: right'>
+    <a href='/users/$username/logout'>sign out</a>
+    </div>
+    welcome, <a href='users/$username'>
+    <img alt='' class='inlineimg' src='/static/user.png'/>
+    $username</a>
+$else:
+    <div style='float: right; left-margin: 10px;'>
+    <a href='/users/$username/logout'>sign in</a>
+    </div>
+    $if username == '':
+        welcome, guest | <a href='/users/create'>create an account</a> to participate    
+    $else:
+        welcome, guest user <a href='users/$username'>
+        <img alt='' class='inlineimg' src='/static/user.png'/> $username</a> | 
+        <a href='/users/$username/create'>create a permanent account</a>
+
+
+<br style='clear:both'/>
+</div>

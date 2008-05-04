@@ -1,0 +1,13 @@
+$def with (post)
+
+<form action="javascript:void(0)" method="get">
+<input disabled='disabled' type="submit" value="worth the read"/>
+<div class="wtrtools">
+  <!--<hr class="thinline"/>-->
+  by <a href='user_page_or_something'><img alt='' src='/static/user.png'/> Article Author</a>
+  &mdash;
+  <input type="submit" onclick="javascript:callout(post.pid)" value="call out" style='margin: 0;' />
+  <br />
+  <small style='color: #505050;'>$post.id &mdash; $post.date_posted &mdash; $post.broad_support</small>
+</div>
+</form>

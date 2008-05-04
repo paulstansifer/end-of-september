@@ -1,0 +1,44 @@
+$def with (real_user, username, articles, now, render)
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
+<head><title>firegray</title>
+<link rel='stylesheet' type='text/css' href='/static/yb.css' />
+<link rel='shortcut icon' href='/static/read.png' />
+<script src='/static/citizen.js'/>
+</head>
+<body>
+
+
+$:{render.sidebar_top(username)}
+<div class='sidebarsection'>
+<p>
+Pick articles you find valuble and insightful, and you'll get more like them.
+</p>
+The best articles appeal to people from many different perspectives.
+
+</div><div class='sidebarsection'>
+Articles that are worth the read for you are saved for later reference.  Some recent ones:
+<ul id='recentwtr'>
+<li> <span class='lul'><a class='listedlink' href='/article/4523'>"Maecenas nonummy.  Nunc elit libero, porta et, commodo ut, mollis eu, diam."</a></span> </li>
+<li> <span class='lul'><a class='listedlink' href='/article/23423'>Civil liberties are a vital part of a functioning society</a></span> </li>
+</ul>
+<div style="text-align:right"><a href='wtrsearch'>more...</a></div>
+</div>
+$:{render.sidebar_bottom(real_user, username)}
+
+
+<div class='stream'>
+$:{render.navbar(real_user, username)}
+
+  
+$for article in articles:
+    <div class='post' id='post$article['pid']'>
+    <a href="javascript:dismiss($article['pid'])" class='dismisser'>  <img alt='dismiss' src='/static/x-icon.png' /> </a>
+    $:article['rendered_post']
+    </div><!--post-->
+
+</div>
+
+</body>
+</html>

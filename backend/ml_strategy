@@ -1,0 +1,51 @@
+Analysis: use enough dimensions to capture 95% of the variance?  Or 10 dimensions or so?
+
+Offline:  (key user) PCA -> k-means -> approximate minimum spanning tree
+...gets you clusters, linked by nearness, weighted by nearness
+
+Online:  
+* (apply kuPCA)
+* select (randomly?) delegates from nearby clusters (lightweight weighted by cluster nearness?)
+* delegates select articles (randomly? last 10?)
+* gather articles, rank and sort by absolute value (possibly influenced by date), filtering out already-seen.
+
+---In more detail---
+Offline:
+ * Apply key-user-PCA to reduce users to D-dimensional vectors.
+ * Use k-means clustering to summarize into clusters (easy in R, but
+we need to pick k -- it should be high-ish.  My guess is around the
+square root of the number of users).
+ * Approximate minimum spanning tree:  calculate a minimum spanning
+tree in R, then throw in all edges below a certain threshold.  Some R
+code, which is only missing a way to filter a matrix to take all high
+values to zero:
+
+distances <- as.matrix(dist(pts))
+complete.graph <- graph.adjacency(distances, weighted=TRUE)
+mst <- minimum.spanning.tree(complete.graph)
+#smallish.distances <- filter.matrix.to.threshold(distances)
+community.connections <- graph.union(graph.adjacency(smallish.distances), mst)
+ * Emit the PCA rotation matrix, the cluster membership, and the graph
+connections, and deliver to the live systems.
+
+
+Online:
+ * (optional)  For every vote, reapply kuPCA, and associate to the
+nearest cluster.  This would be great for new users.  If I'm using
+last.fm, I have to wait a week to get personalized information, but,
+for something like this, it'd be nice to get it on the next page load.
+ So, if it's a server hog, give priority to newer users.
+ * For every vote, update absolute value.  Assigned one cluster-one
+vote style, so that groupthinkers have reduced power.  Each cluster
+will vote in proportion to the number of users who voted for the
+article.  There should be a bonus to magnify the presence of one or
+two votes.  There should also be a bonus for high standard deviation
+on cluster centers.
+ * Every time a user requests a batch of articles:
+  + Select "delegates" other users from nearby clusters, randomly
+(possibly weighted by distance).  Choose more delegates from near
+clusters, but not too many more.
+  + Each delegate chooses articles they had voted for (i.e., randomly
+pick some, or maybe just grab the last ten)
+  + Filter out ones already viewed, and rank by absolute value
+(possibly penalizing for age).
