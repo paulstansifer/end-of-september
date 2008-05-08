@@ -1,0 +1,165 @@
+body {
+  color: #003300;
+  background-color: #FFFFCC;
+  padding: 0px;
+  font-family: georgia, serif;
+  width: 800px;
+  font-size: 11pt;
+}
+
+a {
+  text-decoration: underline;
+  color: #333366;
+}
+
+
+/*  Not meaningful, since we've got underlined links
+.inlineimg {
+  margin-bottom: -3px;
+}
+   */
+a:visited {
+  color: #163333;
+}
+form { 
+  margin: 0;
+  padding: 0;
+}
+.tools {
+  padding: 3px;
+  text-align: right;
+  clear: both;
+}
+input{
+  border-top: 1px solid #333366;
+  border-left: 1px solid #333366;
+  border-right: 1px solid Black;
+  border-bottom: 1px solid Black;
+  background-color: #F8F8B0;
+    /*
+  margin-top: 3px;
+  margin-bottom: 3px;
+       */
+  padding: 2px;
+  margin: 4px;
+  font-size: 12px;
+  font-family: georgia;
+}
+.textin{
+  border-top: 1px solid Black;
+  border-left: 1px solid Black;
+  border-right: 1px solid #333366;
+  border-bottom: 1px solid #333366;
+  background-color: #FFFFDE;
+  font-family: georgia;
+}
+input[disabled] {
+  border: 3px double #909090;
+  background-color: #FFFFC0;
+  color: #336633;
+  padding: 0px;
+  //font-weight: bold;
+}
+.thinline {
+  border-top: 1px dotted #660000;
+  border-bottom: 0px;
+  border-left: 0px;
+  border-right: 0px;
+  text-align: left;
+  
+  width: 90%;
+}
+.wtrtools {
+  text-align: center;
+  //margin-top: -8px;
+}
+
+.general {
+  margin-top: 100pt;
+  float: left;
+  width: 225px;
+  text-align: left;
+}
+.navbar {
+  margin-bottom: 20px;
+}
+.stream {
+  width: 565px;
+  text-align: justify;
+  float: right;
+  margin-right: 3px;
+}
+.post {
+  /*border: 1px dotted #660000;*/
+  background-color: #FFFFE0;
+  padding: 5px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.sidebar{
+  float:left;
+  width:115px;
+  border-right: 1px dotted #660000;
+  padding-right: 3px;
+  font-size: 75%;
+  text-align: left;
+}
+.sidebarsection{
+  border-bottom: 2px solid #660000;
+  padding-bottom: 6px;
+  padding-top: 3px;
+  padding-left: 2px;
+}
+.postbody{
+  float:right;
+  width:430px;
+}
+p {
+  margin-top: 0pt;
+  margin-bottom: 4pt;
+  text-indent: 1em;
+}
+p.
+hr {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+.quote{
+  width: 165px;
+  font-size: 150%;
+  border-top: 4px solid #660000;
+  border-bottom: 4px solid #660000;
+  float: right;
+  text-align: right;
+  margin: 10px;
+  margin-right: 0px;
+}
+.justbutton {
+  text-align: right;
+}
+.notice {
+  border: 2px dashed #660000;
+}
+ul {
+  padding-left: 15px;
+}
+li {
+  padding-bottom: 5px;
+}
+
+.dismisser {
+  float: right;
+  margin-left: 5px;
+  margin-bottom: 5px;
+  padding: 0px;
+}
+
+
+img {border:0;}
+
+h1 { margin-top: 0; margin-bottom: 0px; text-align: left; }
+h2 { font-size: 150%; margin-top: 0; margin-bottom: 0px; text-align: left; }
+h3 { margin-top: 0; margin-bottom: 0px; text-align: left; }
+h5 { margin-top: 0; margin-bottom: 0px; text-align: left; }
+

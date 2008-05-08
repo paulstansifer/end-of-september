@@ -13,7 +13,7 @@ render = web.template.render('templates/')
 
 urls = ('/favicon.ico', 'favicon',
         '/login', 'login',
-        '/register', 'register'
+        '/register', 'register',
         '/', 'default',
         '/users/(.*)/frontpage', 'frontpage',
         '/users/(.*)/compose', 'compose',
@@ -48,7 +48,7 @@ class normal_style:
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
 <head><title>%s</title>
-<link rel="stylesheet" type="text/css" href="/static/yb.css" />
+<link rel="stylesheet" type="text/css" href="/static/suitcase.css" />
 <link rel="shortcut icon" href="/static/read.png" />''' % title
     for js in js_files:
       print '<script src="/static/%s" type="text/javascript" />' % js
