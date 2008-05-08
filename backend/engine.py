@@ -4,6 +4,8 @@
 
 # $Id: engine.py 61 2008-01-27 16:41:33Z daniel $
 
+#I believe that we should be superseeded by online.py (PS 4-5-2008)
+
 from state import State
 
 from random import randint
