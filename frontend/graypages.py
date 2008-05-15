@@ -17,6 +17,7 @@ urls = ('/favicon.ico', 'favicon',
         '/', 'default',
         '/users/(.*)/frontpage', 'frontpage',
         '/users/(.*)/compose', 'compose',
+        '/users/(.*)/search', 'search',
         '/users/(.*)/vote/wtr(.*)', 'vote',
         '/admin/recluster', 'recluster')
 
@@ -103,7 +104,13 @@ class default(cookie_session):
   def GET(self):
     uid = self.get_uid_from_cookie()
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
-    
+
+def post_wrap():
+    return ('''<div class="post" id="post%d">
+      <a href="javascript:dismiss(%d)" class="dismisser">
+      <img alt="dismiss" src="/static/x-icon.png" /> </a>''' % (post.id, post.id)
+      + render_post.render(post, username, state.voted_for(uid, post.id), render)
+      + "</div>")
 
 class frontpage(cookie_session, normal_style):
   def GET(self, username):
@@ -121,19 +128,13 @@ class frontpage(cookie_session, normal_style):
     #recommendations = engine.recommend_for_cluster(state, user_cluster)
     posts = online.gather(user, state)[0:6] #TODO: retirement
     for post in posts:
-      content += '''<div class="post" id="post%d">
-      <a href="javascript:dismiss(%d)" class="dismisser">
-      <img alt="dismiss" src="/static/x-icon.png" /> </a>''' % (post.id, post.id)
-      content += render_post.render(post, username, state.voted_for(uid, post.id), render)
-      content += "</div>"
+      content += post_wrap(post)
 
     sidebar = render.ms_sidebar()
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
 class compose(cookie_session, normal_style):
   def GET(self, username): #composition page
-    web.webapi.internalerror = web.debugerror
-
     uid = self.get_uid_from_cookie(username)    
 
     self.package(render.c_sidebar(), render.c_body(), uid < 10, username, js_files=['quicktags.js', 'editor.js'])
@@ -144,6 +145,23 @@ class compose(cookie_session, normal_style):
     #TODO: we need to deal with pids in posts.  And record the author.
     state.set_post(uid, i.claim, i.posttext)
     web.seeother('/users/' + username + '/frontpage')
+
+class search(cookie_session, normal_style):
+  def GET(self, username):
+    
+    i = web.input()
+    terms = i.search
+    if i.local:
+      uid = self.get_uid_from_cookie(username) #TODO error handling
+      posts = search.local_search(state.get_user(uid).cid, terms, i.recent)
+    else:
+      posts = search.global_search(terms, i.recent)
+
+    for post in posts:
+      content += post_wrap(post)
+
+    sidebar = render.search_sidebar()
+    self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
     
 class vote(cookie_session):
