@@ -13,7 +13,7 @@ import web # Needed for database access
 import sys
 import random # Needed for random cluster assignment hack.  Should disappear
 
-#import search 
+import search 
 
 class State:
     def __init__(self, database='yb'):
@@ -86,7 +86,7 @@ class State:
         web.insert('post_content', pid=new_post, raw=content, tokens = 'TODO', safe_html='TODO')
         
         self.vote(uid, new_post)
-        #search.
+        search.
         return new_post
 
     def get_post(self, pid, content=False):

@@ -19,8 +19,6 @@ class Search:
         indexer = xapian.TermGenerator()
         self.stemmer = xapian.Stem("english") #I18N
         indexer.set_stemmer(self.stemmer)
-
-        self.term_cache = () #is this the right way to init a hash?
             
     #Term must be normalized and stemmed and everything first
     def get_term_exemplars(self, cid, term):
@@ -44,10 +42,10 @@ class Search:
 
             scope_edge = new_scope_edge
 
-    def local_search(self, cid, term, recent, count):
+    def local_search(self, cid, term):
         exemplar_pids = self.get_term_exemplars(cid, term)
         guesser = Bayes()
-        #TODO use cache
+
         for ex_pid in exemplar_pids:
             ex = state.get_post(ex_pid, content=True)
 
@@ -63,7 +61,7 @@ class Search:
         ]
 
         proportions = [ #knock out the weak and irrelevant ones before sorting
-            (tok, prop) for (tok, prop) in proportions if prop > 1.15 ]
+            (tok, prop) for (tok, prop) in proportions if prop > 1.1 ]
 
         if len(proportions) <= 2:
             pass #TODO revert to fulltext search
@@ -73,21 +71,11 @@ class Search:
         #search for the eight best words
         query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:8]] )
 
-        self.term_cache[term] = (query, guesser)
-
-        #TODO: we want to mix in an absolute quality score at this point.
-        #Can Xapian do that?
         enq = xapian.Enquire(self.mainabase)
         enq.set_query(query)
-        mset = enq.get_mset(0, int(count*2.5))
-
-        scored_results = [ (m, 1) for m in mset ] #TODO: get score and extract pid
-        sort(scored_results, key=operator.itemgetter(1))
-
-        return scored_results[:count] #TODO extract pids
-                              
-
-
+        mset = enq.get_mset(0, 25)
+        #TODO: do something with the results
+        
     def add_article(self, post):
         doc = xapian.Document()
         doc.set_data(post.contents)
