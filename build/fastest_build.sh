@@ -10,9 +10,9 @@
 #mkdir build
 
 # Copy modified files to build location
-cp -Rf ../backend/* build/
-cp -Rf ../frontend/* build/
-#cp -Rf ../../engine/trunk/* build/
+cp -Rf ../../backend/trunk/* build/
+cp -Rf ../../frontend/trunk/* build/
+cp -Rf ../../engine/trunk/* build/
 
 # Start Yeah-But
 cd build
