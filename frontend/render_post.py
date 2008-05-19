@@ -56,14 +56,21 @@ def render(post, username, vote, templates):
     #TODO: do better
     content = content.replace('[/', '<i>').replace('/]', '</i>').replace('[*', '<b>').replace('*]','</b>')
     #it might be best just to make a little compiler in bison.  It could handle the callouts, too.
+
+    pid = str(post.id)
+
     
     ret_val = """
     <h3>Claim: """+claim+"""</h3>
-    <div class='contents'>
+    <div id='summary"""+pid+"""' class='summary' style='display: inline'>
+    &#8220;"""+callout+"""&#8221;
+    (<a href='javascript:expose("""+pid+""")' class='ajaxy'>view</a>)
+    </div>
+    <div id='contents"""+pid+"""' class='contents' style='display: none'>
     <div class='sidebar'>
     <div class='sidebarsection'>
     """ + render_timedelta(age) + """ ago<br />
-    <small style='color: #505050;'>pid: """+ str(post.id)  +"""</small>
+    (<a href='javascript:shrink("""+pid+""")' class='ajaxy'>shrink</a>)
     </div>
     <sup>a</sup> <a href='http://en.wikipedia.org/wiki/Pet_eye_remover'>[wikipedia]</a><br />
     <sup>b</sup> <a href='http://en.wikipedia.org/wiki'>[wikipedia]</a><br />
@@ -76,16 +83,14 @@ def render(post, username, vote, templates):
     <div class='postbody'>""" + content + """
     <!-- need to deal with call-outs -->
     </div>
-    </div> <!--contents-->
     <div class='tools'>"""
     
     if vote:
         ret_val = ret_val + templates.vote_result(post)
     else:
-      p = str(post.id)
       ret_val = ret_val + \
-        '<form id="wtr'+ p + '" name="wtr' + p + '" action="javascript:void(0)" method="get">' +\
+        '<form id="wtr'+ pid + '" name="wtr' + pid + '" action="javascript:void(0)" method="get">' +\
         '<input type="button" onclick="javascript:voteon(' + p + ',\'' + username +'\')" value="worth the read" />' +\
         '<div id="status' + p + '"></div></form>'
-    ret_val = ret_val + "</div>"
+    ret_val = ret_val + "</div><!--tools-->    </div> <!--contents-->"
     return ret_val

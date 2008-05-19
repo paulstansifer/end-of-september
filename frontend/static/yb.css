@@ -2,7 +2,7 @@ body {
   color: Black;
   background-color: #BBBBBB;
   padding: 0px;
-  font-family: optima, candara, "Trebuchet MS", georgia, serif;
+  font-family: /*optima, candara, "Trebuchet MS",*/ georgia, serif;
   width: 800px;
   font-size: 11pt;
 }

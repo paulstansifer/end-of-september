@@ -3,11 +3,13 @@
 import web
 from datetime import datetime
 
-from state import State
+import state
 from state_filler import populate_state
 import engine
 import render_post
 import online
+
+print "Initializing graypages . . ."
 
 render = web.template.render('templates/')
 
@@ -16,14 +18,16 @@ urls = ('/favicon.ico', 'favicon',
         '/register', 'register',
         '/', 'default',
         '/users/(.*)/frontpage', 'frontpage',
+        '/view/(.*)', 'article',
         '/users/(.*)/compose', 'compose',
         '/users/(.*)/vote/wtr(.*)', 'vote',
         '/admin/recluster', 'recluster')
 
-# Create a new page state object
-state = State()
+# get the system state clearinghouse
+state = state.the
 
 web.webapi.internalerror = web.debugerror
+
 class login: #TODO: authenticate.  username or email address required, not both
   def GET(self):
     inp = web.input()
@@ -48,7 +52,7 @@ class normal_style:
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
 <head><title>%s</title>
-<link rel="stylesheet" type="text/css" href="/static/suitcase.css" />
+<link rel="stylesheet" type="text/css" href="/static/yb.css" />
 <link rel="shortcut icon" href="/static/read.png" />''' % title
     for js in js_files:
       print '<script src="/static/%s" type="text/javascript" />' % js
@@ -63,45 +67,54 @@ class normal_style:
     print "</div></body></html>"
 
 
+class CantAuth(Exception):
+  def __init__(self, msg):
+    self.msg = msg
+
 #Private, but non-sensitive activities are accessible with a cookie login
 class cookie_session:
   #Returns the uid, if the user is logged in.  If the username is
   #provided (e.g., from a URL), try that one.  Otherwise, check the
-  #cookies for the last session
+  #cookies for the last session.  
   #
   #Require a proper login with a password before doing anything
   #serious/unreversable
-  def get_uid_from_cookie(self, name_from_url=''):
+  def uid_from_cookie(self, name_from_url=None):
+    cookies = web.cookies()      
+
     try:
-      cookies = web.cookies()
-      
-      if len(name_from_url) > 0:
+      if name_from_url != None:
         username = name_from_url  
       else:
         username = cookies['name']
       uid = state.get_uid_from_name(username)
-      if uid == None:
-        web.seeother('/must_login') #TODO
-        return None
+      if uid == None: #username not recognized (rare -- mucking with cookies?)
+        raise CantAuth("User name '" + username+"' not recognized.")
       ticket = cookies['ticket_for_' + username]
-    except KeyError:
-      #TODO: we probably want some kind of appropriate error message
-      web.seeother('/must_login') #TODO: we want to stop the rest of rendering from happening
-      return None
-    
+    except KeyError: #name missing (common) or ticket missing (rare)
+      raise CantAuth("Not logged in.")
     if state.check_ticket(uid, ticket):
       web.setcookie('name', username, expires=3600*24*90)
       #after three months of inactivity, you get logged out
       return uid
-    else:
-      return None
+    else: #ticket invalid (rare -- mucking with cookies?)
+      raise CantAuth("Invalid ticket.")
   
-  def logout(self):
-    web.setcookie('name', '', expires=-1) #nuke the cookie
+  def logout(self, name_from_url=''):
+    if len(name_from_url) > 0:
+      name = name_from_url
+    else:
+      try:
+        name = web.cookies()['name']
+      except KeyError:
+        raise CantAuth("Not logged in.")
+      
+    web.setcookie('name', '[invalid]', expires=-1) #nuke the cookie
+    web.setcookie('ticket_for_' + name, '[invalid]', expires=-1)
 
 class default(cookie_session):
   def GET(self):
-    uid = self.get_uid_from_cookie()
+    uid = self.uid_from_cookie()
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
     
 
@@ -109,7 +122,7 @@ class frontpage(cookie_session, normal_style):
   def GET(self, username):
     web.webapi.internalerror = web.debugerror
 
-    uid = self.get_uid_from_cookie(username)
+    uid = self.uid_from_cookie(username)
     if uid is None:
       web.seeother('/login') #FIXME: handle error.
       return
@@ -130,19 +143,34 @@ class frontpage(cookie_session, normal_style):
     sidebar = render.ms_sidebar()
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
+class article(cookie_session, normal_style):
+  def GET(self, pid):
+    try:
+      uid = self.uid_from_cookie(None)
+    except CantAuth:
+      pass
+      #TODO: should be able to view articles, even logged out
+    post = state.get_post(pid, content=True)
+    content = ('<div class="post" id="post%d">' +
+      render_post.render_post(post, username,
+                              state.voted_for(uid, pid), render) +
+      '</div>')
+    sidebar = render.ms_sidebar() #TODO: make a special sidebar
+    self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
+
 class compose(cookie_session, normal_style):
   def GET(self, username): #composition page
     web.webapi.internalerror = web.debugerror
 
-    uid = self.get_uid_from_cookie(username)    
+    uid = self.uid_from_cookie(username)    
 
     self.package(render.c_sidebar(), render.c_body(), uid < 10, username, js_files=['quicktags.js', 'editor.js'])
 
   def POST(self, username): #submit a post
     i = web.input()
-    uid = self.get_uid_from_cookie(username)
+    uid = self.uid_from_cookie(username)
     #TODO: we need to deal with pids in posts.  And record the author.
-    state.set_post(uid, i.claim, i.posttext)
+    state.create_post(uid, i.claim, i.posttext)
     web.seeother('/users/' + username + '/frontpage')
 
     
@@ -150,7 +178,7 @@ class vote(cookie_session):
   def PUT(self, user, pid_str):
     pid = int(pid_str)
     web.webapi.internalerror = web.debugerror
-    uid = self.get_uid_from_cookie(user)
+    uid = self.uid_from_cookie(user)
     state.vote(uid, pid)
     print render.vote_result(state.get_post(pid))
 
@@ -170,7 +198,6 @@ class favicon:
     
 def not_found():
   print render.not_found() #TODO: reduce irony by creating template
-
 
 if __name__ == "__main__":
   web.run(urls, globals(), web.reloader)

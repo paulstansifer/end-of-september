@@ -4,6 +4,16 @@ function dismiss(id) {
   //TODO notify server, so it won't be displayed on future page loads
 }
 
+function expose(id) { //TODO: support earlier browsers
+  document.getElementById('summary'+id).style.display = 'none';
+  document.getElementById('contents'+id).style.display = 'inline';
+}
+
+function shrink(id) { //TODO: support earlier browsers
+  document.getElementById('summary'+id).style.display = 'inline';
+  document.getElementById('contents'+id).style.display = 'none';
+}
+
 function voteon(id, username) {
   var req;
   var form = document.getElementById("wtr"+id);

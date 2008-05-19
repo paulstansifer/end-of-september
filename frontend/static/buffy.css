@@ -1,6 +1,6 @@
 body {
-  color: #003300;
-  background-color: #FFFFCC;
+  color: #F0F0F0;
+  background-color: #101010;
   padding: 0px;
   font-family: georgia, serif;
   width: 800px;
@@ -8,10 +8,10 @@ body {
 }
 
 a {
-  /*text-decoration: underline;*/
-  text-decoration: none;
-  border-bottom: 1px dotted #333366;
-  color: #161666;
+  text-decoration: underline;
+  /*text-decoration: none;
+  border-bottom: 1px dotted #333366;*/
+  color: #E0E0FF;
 }
 
 
@@ -21,7 +21,7 @@ a {
 }
    */
 a:visited {
-  color: #161633;
+  color: #F0F0FF;
 }
 form { 
   margin: 0;
@@ -37,7 +37,7 @@ input{
   border-left: 1px solid #333366;
   border-right: 1px solid Black;
   border-bottom: 1px solid Black;
-  background-color: #F8F8B0;
+  background-color: #D0D0D0;
     /*
   margin-top: 3px;
   margin-bottom: 3px;
@@ -52,18 +52,18 @@ input{
   border-left: 1px solid Black;
   border-right: 1px solid #333366;
   border-bottom: 1px solid #333366;
-  background-color: #FFFFDE;
+  background-color: #000000;
   font-family: georgia;
 }
 input[disabled] {
   border: 3px double #909090;
-  background-color: #FFFFC0;
+  background-color: #202020;
   /*color: #336633;*/
   padding: 0px;
   //font-weight: bold;
 }
 .thinline {
-  border-top: 1px dotted #660000;
+  border-top: 1px dotted #808080;
   border-bottom: 0px;
   border-left: 0px;
   border-right: 0px;
@@ -78,23 +78,23 @@ input[disabled] {
 
 .general {
   margin-top: 100pt;
-  float: left;
+  float: right;
   width: 225px;
   text-align: left;
 }
 .navbar {
   margin-bottom: 20px;
-  color: #225522;
+  /*color: #225522;*/
 }
 .stream {
   width: 565px;
   text-align: justify;
-  float: right;
+  float: left;
   margin-right: 3px;
 }
 .post {
   /*border: 1px dotted #660000;*/
-  background-color: #FFFFE0;
+  background-color: #E8E8E8;
   padding: 5px;
   margin-top: 10px;
   margin-bottom: 10px;
@@ -133,8 +133,8 @@ hr {
 .quote{
   width: 165px;
   font-size: 150%;
-  border-top: 4px solid #660000;
-  border-bottom: 4px solid #660000;
+  border-top: 4px solid #808080;
+  border-bottom: 4px solid #808080;
   float: right;
   text-align: right;
   margin: 10px;
@@ -144,7 +144,7 @@ hr {
   text-align: right;
 }
 .notice {
-  border: 2px dashed #660000;
+  border: 2px dashed #808080;
 }
 ul {
   padding-left: 15px;
