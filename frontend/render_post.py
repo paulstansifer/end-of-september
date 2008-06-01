@@ -44,7 +44,7 @@ def render_timedelta(td):
   return ret_val
     
 
-def render(post, username, vote, templates):
+def render(post, templates, vote=None, username=None):
     claim = post.claim
     age = datetime.now() - post.date_posted
     callout = "Maecenas nonummy. Nunc elit libero, porta et, commodo ut, mollis eu, diam."
@@ -82,15 +82,20 @@ def render(post, username, vote, templates):
     </div>
     <div class='postbody'>""" + content + """
     <!-- need to deal with call-outs -->
-    </div>
-    <div class='tools'>"""
+    </div>"""
+
+    if username != None:
+        ret_val += "<div class='tools'>"
     
-    if vote:
-        ret_val = ret_val + templates.vote_result(post)
-    else:
-      ret_val = ret_val + \
-        '<form id="wtr'+ pid + '" name="wtr' + pid + '" action="javascript:void(0)" method="get">' +\
-        '<input type="button" onclick="javascript:voteon(' + p + ',\'' + username +'\')" value="worth the read" />' +\
-        '<div id="status' + p + '"></div></form>'
-    ret_val = ret_val + "</div><!--tools-->    </div> <!--contents-->"
+        if vote:
+            ret_val += templates.vote_result(post)
+        else:
+            ret_val += (
+                '<form id="wtr'+ pid + '" name="wtr' + pid
+                + '" action="javascript:void(0)" method="get">'
+                + '<input type="button" onclick="javascript:voteon('
+                + pid + ',\'' + username +'\')" value="worth the read" />'
+                + '<div id="status' + pid + '"></div></form>')
+        ret_val += "</div>" #end 'tools'
+    ret_val += "</div>" #end 'contents'
     return ret_val
