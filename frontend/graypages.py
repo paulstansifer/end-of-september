@@ -3,7 +3,7 @@
 import web
 from datetime import datetime
 
-import state
+import state, search
 from state_filler import populate_state
 import engine
 import render_post
@@ -19,12 +19,14 @@ urls = ('/favicon.ico', 'favicon',
         '/', 'default',
         '/users/(.*)/frontpage', 'frontpage',
         '/view/(.*)', 'article',
+        '/users/(.*)/search', 'search_results',
         '/users/(.*)/compose', 'compose',
         '/users/(.*)/vote/wtr(.*)', 'vote',
         '/admin/recluster', 'recluster')
 
 # get the system state clearinghouse
 state = state.the
+search = search.the
 
 web.webapi.internalerror = web.debugerror
 
@@ -46,7 +48,7 @@ class login: #TODO: authenticate.  username or email address required, not both
 
 
 class normal_style:
-  def package(self, sidebar, content, real_user, username, js_files=[], title='firegray'):
+  def package(self, sidebar, content, real_user=False, username=None, js_files=[], title='firegray'):
     print '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -116,7 +118,15 @@ class default(cookie_session):
   def GET(self):
     uid = self.uid_from_cookie()
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
-    
+
+def post_wrap(post, username, uid):
+    return ('''<div class="post" id="post%d">
+      <a href="javascript:dismiss(%d)" class="dismisser">
+      <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
+            % (post.id, post.id)
+      + render_post.render(post, state.voted_for(uid, post.id),
+                           render, username)
+      + "</div>")
 
 class frontpage(cookie_session, normal_style):
   def GET(self, username):
@@ -134,29 +144,30 @@ class frontpage(cookie_session, normal_style):
     #recommendations = engine.recommend_for_cluster(state, user_cluster)
     posts = online.gather(user, state)[0:6] #TODO: retirement
     for post in posts:
-      content += '''<div class="post" id="post%d">
-      <a href="javascript:dismiss(%d)" class="dismisser">
-      <img alt="dismiss" src="/static/x-icon.png" /> </a>''' % (post.id, post.id)
-      content += render_post.render(post, username, state.voted_for(uid, post.id), render)
-      content += "</div>"
+      content += post_wrap(post, user.name, uid)
 
     sidebar = render.ms_sidebar()
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
 class article(cookie_session, normal_style):
   def GET(self, pid):
+    pid = int(pid)
+    post = state.get_post(pid, content=True)
     try:
       uid = self.uid_from_cookie(None)
+      username = state.get_user(uid).name
+      real = uid < 10
+      content = render_post.render(post, render,
+                                   state.voted_for(uid, pid),
+                                   username)
     except CantAuth:
-      pass
-      #TODO: should be able to view articles, even logged out
-    post = state.get_post(pid, content=True)
-    content = ('<div class="post" id="post%d">' +
-      render_post.render_post(post, username,
-                              state.voted_for(uid, pid), render) +
-      '</div>')
-    sidebar = render.ms_sidebar() #TODO: make a special sidebar
-    self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
+      username = None
+      real = False
+      content = render_post.render(post, render)
+
+    self.package(render.ms_sidebar(), #TODO: make a special sidebar
+                 '<div class="post" id="post%d">' + content + '</div>',
+                 real, username, js_files=['citizen.js'])
 
 class compose(cookie_session, normal_style):
   def GET(self, username): #composition page
@@ -172,6 +183,29 @@ class compose(cookie_session, normal_style):
     #TODO: we need to deal with pids in posts.  And record the author.
     state.create_post(uid, i.claim, i.posttext)
     web.seeother('/users/' + username + '/frontpage')
+
+class search_results(cookie_session, normal_style):
+  def GET(self, username):
+    
+    i = web.input()
+    terms = i.search
+    if i.local:
+      uid = self.uid_from_cookie(username) #TODO error handling
+      import cProfile
+      print "<pre style='font-size: 70%; width: 500px;'>"
+      cProfile.run('search.local_search(1, "%s", True)' % terms)
+      print "</pre>"
+      #posts = search.local_search(state.get_user(uid).cid, terms, i.recent)
+    else:
+      posts = search.global_search(terms, i.recent)
+
+    content = 'TODO'
+    #for post in posts:
+    #  content += post_wrap(post)
+
+    sidebar = render.search_sidebar(i.local)
+    self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
+
 
     
 class vote(cookie_session):
