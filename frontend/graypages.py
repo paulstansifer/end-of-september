@@ -124,8 +124,8 @@ def post_wrap(post, username, uid):
       <a href="javascript:dismiss(%d)" class="dismisser">
       <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
             % (post.id, post.id)
-      + render_post.render(post, state.voted_for(uid, post.id),
-                           render, username)
+      + render_post.render(post, render,
+                           state.voted_for(uid, post.id), username)
       + "</div>")
 
 class frontpage(cookie_session, normal_style):

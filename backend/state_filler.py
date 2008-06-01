@@ -54,7 +54,7 @@ sentences_general = [
     'We\'re revoking your math license.',
     'Alice was the attacker, not Eve!',
     'This crypto system isn\'t a thinly disuigsed Missy Elliot song; it\'s a thinly disguised Dire Straights song!',
-    'This can generalize the so-called "friendly numbers" onto the complex plane C.'
+    'This can generalize the so-called "friendly numbers" onto the complex plane C.',
     'Let me tell you about my hobby.',
     'That reminds me of a friend of mine, Robert \' DROP TABLE students --.'
     ] + sentences_1 + sentences_2 + sentences_3 + sentences_4 + claims
