@@ -86,24 +86,26 @@ class State:
         web.insert('post_content', pid=new_post, raw=content, tokens = 'TODO', safe_html='TODO')
         
         self.vote(uid, new_post)
-        search.
-        return new_post
+        search.add_article(self.get_post(new_post, True))        
+        #return new_post
 
     def get_post(self, pid, content=False):
-        if content == False:
-            post = web.select('post', where='id=%d' % pid)
+        post = web.select('post', where='id=%d' % pid)
 
-        if len(post) is 0: return None
-        #else:
-        #    post = web.query('select id,uid,claim,broad_support,date_posted,%s from post inner join on post.id = post_content.pid where id=%d', web.sqlquote(content), pid)
-        lazies = {
-            'raw' : (lambda : web.query('select raw from post_content where pid=%d' % pid)[0].raw),
-            'safe_html' : (lambda : web.query('select safe_html from post_content where pid=%d' % pid)[0].safe_html),
-            'tokens' : (lambda : web.query('select tokens from post_content where pid=%d' % pid)[0].tokens)
+        if len(post) is 0: return None #TODO raise something
+ 
+        if content == True:
+            lazies = {
+                'raw' : (lambda : web.query('select raw from post_content where pid=%d' % pid)[0].raw),
+                'safe_html' : (lambda : web.query('select safe_html from post_content where pid=%d' % pid)[0].safe_html),
+                'tokens' : (lambda : web.query('select tokens from post_content where pid=%d' % pid)[0].tokens)
             }
-        lazies.update(post[0])
+            
+            lazies.update(post[0])
         
-        return web.storage(lazies)
+            return web.storage(lazies)
+        else:
+            return post[0]
 
     def get_random_posts(self, count):
         return web.select('post', order='rand', limit='%d' % count)
