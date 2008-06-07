@@ -93,16 +93,20 @@ def populate_state(state):
 
         if not file_pid in added_file_pids:
  
-            body = ''.join([ '<p>' +
-                            ' '.join([sample(para[topic], 1)[0] for k in xrange(randint(1,5))])
-                            + '</p>'
+            body = ''.join([
+                            ' '.join([sample(para[topic], 1)[0]
+                                      for k in xrange(randint(1,5))])
+                            + '\n\n  '
                             for j in xrange(randint(1,5))])
             state_pid = state.create_post(1, sample(claims, 1)[0], body)
             pid_file_to_state[file_pid] = state_pid
             added_file_pids.add(file_pid)
-        state.vote(uid_file_to_state[file_uid],
+            state.vote(uid_file_to_state[file_uid],
                    pid_file_to_state[file_pid],
                    ['a','b','c','d'][topic])
+        else:
+            state.vote(uid_file_to_state[file_uid],
+                   pid_file_to_state[file_pid])
     print "Recalculating scores . . ."
     for post in web.select('post'):
         state.update_support(post.id, online.broad_support_for(post.id, state))

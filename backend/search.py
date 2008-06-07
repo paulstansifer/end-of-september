@@ -57,9 +57,11 @@ class Search:
 
             new_scope_edge -= scope
             results += state.the.get_term_in_clusters(term, new_scope_edge)
+            print >> sys.stderr, "EXEMPLARS: ", state.the.get_term_in_clusters(term, new_scope_edge)
+
 
             scope_edge = new_scope_edge
-            print >> sys.stderr, "EXEMPLARS: ", len(results), " < ", goal_count, " ... ", len(scope_edge)
+            #print >> sys.stderr, "EXEMPLARS: ", len(results), " < ", goal_count, " ... ", len(scope_edge)
 
         random.shuffle(results)
 
@@ -76,7 +78,7 @@ class Search:
 
         for ex_pid in exemplar_pids:
             ex = state.the.get_post(ex_pid, content=True)
-
+            #print >> sys.stderr, "SEARCH: exemplar tokens:\n%s\n---\n" % ex.tokens()
             guesser.train("relevant", ex.tokens()) #get normalized content from p.
             # TODO Toss in other factors, if possible.
 
@@ -86,19 +88,19 @@ class Search:
         print >> sys.stderr, "SEARCH: trained"
 
         proportions = [
-            (tok, count / (1.0 * guesser.pools["random"][tok]))
+            (tok, (count+1) / (1.0 * guesser.pools["random"].get(tok,0) + 1))
                 for (tok, count) in guesser.poolData("relevant")
         ]
 
         proportions = [ #knock out the weak and irrelevant ones before sorting
             (tok, prop) for (tok, prop) in proportions if prop > 1.15 ]
 
-        print >> sys.stderr, "SEARCH: proportions: ", proportions
-
         if len(proportions) < 3:
             pass #TODO revert to fulltext search
 
         proportions.sort(key=operator.itemgetter(1), reverse=True)
+
+        print >> sys.stderr, "SEARCH: proportions: ", proportions
 
         print >> sys.stderr, "SEARCH: props sorted"
 
