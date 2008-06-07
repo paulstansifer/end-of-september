@@ -46,14 +46,14 @@ class State:
                     db=self.database)
 
     def clear(self):
-        for table in ['user', 'ticket', 'post', 'vote', 'cluster']:
+        for table in ['user', 'ticket', 'post', 'vote', 'cluster', 'relevance']:
             web.delete(table, where='1=1')
 
     #TODO: impose restrictions on name contents (Bobby Tables!)
     def create_user(self, name, pwd, email):
         users_with_name = web.select('user',
                                      where = 'name=%s' % web.sqlquote(name))
-        if len(users_with_name) is not 0: return None
+        if len(users_with_name) is not 0: raise Exception("user already exists named %s" % name)
         new_user = int(web.insert('user', name=name, password=pwd, email=email))
         self._setcluster(new_user, random.randint(0,4)) #TODO temporary hack
         return new_user
@@ -75,12 +75,12 @@ class State:
     
     def get_user(self, uid):
         user = web.select('user', where = 'id=%s' % web.sqlquote(uid))
-        if len(user) is 0: return None
+        if len(user) is 0: raise Exception("user with uid %d not found" % uid)
         return user[0]
 
     def get_uid_from_name(self, name):
         user = web.select('user', where='name=%s' % web.sqlquote(name))
-        if len(user) is 0: return None
+        if len(user) is 0: return Exception("user with name %s not found" % name)
         return int(user[0].id)
 
     
@@ -104,7 +104,7 @@ class State:
     def get_post(self, pid, content=False):
         post = web.select('post', where='id=%d' % pid)
 
-        if len(post) is 0: return None
+        if len(post) is 0: raise Exception("article with pid %d not found" % pid)
 
         if content == False:
             return post[0]
