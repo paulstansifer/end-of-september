@@ -11,13 +11,14 @@
 from datetime import datetime
 import web # Needed for database access
 import sys
+#import xfer
 import random # Needed for random cluster assignment hack.  Should disappear
 
-import search 
+import search
 
 class State:
     def __init__(self, database='yb'):
-        print >> sys.stderr, 'Initializing State . . .' 
+        print >> sys.stderr, 'Initializing state . . .' 
 
         self.database = database
         random.seed()
@@ -32,6 +33,10 @@ class State:
 
         self.cluster_size_cache = {}
 
+        #self.ssh_client = paramiko.SSHClient()
+
+        self.search = search.the
+        
     # For use when web server is NOT running
     def connect(self):
         web.connect(dbn='mysql',
@@ -41,14 +46,14 @@ class State:
                     db=self.database)
 
     def clear(self):
-        for table in ['user', 'ticket', 'post', 'vote', 'cluster']:
+        for table in ['user', 'ticket', 'post', 'vote', 'cluster', 'relevance']:
             web.delete(table, where='1=1')
 
-
+    #TODO: impose restrictions on name contents (Bobby Tables!)
     def create_user(self, name, pwd, email):
         users_with_name = web.select('user',
                                      where = 'name=%s' % web.sqlquote(name))
-        if len(users_with_name) is not 0: return None
+        if len(users_with_name) is not 0: raise Exception("user already exists named %s" % name)
         new_user = int(web.insert('user', name=name, password=pwd, email=email))
         self._setcluster(new_user, random.randint(0,4)) #TODO temporary hack
         return new_user
@@ -70,35 +75,46 @@ class State:
     
     def get_user(self, uid):
         user = web.select('user', where = 'id=%s' % web.sqlquote(uid))
-        if len(user) is 0: return None
+        if len(user) is 0: raise Exception("user with uid %d not found" % uid)
         return user[0]
 
     def get_uid_from_name(self, name):
         user = web.select('user', where='name=%s' % web.sqlquote(name))
-        if len(user) is 0: return None
+        if len(user) is 0: return Exception("user with name %s not found" % name)
         return int(user[0].id)
 
     
     def create_post(self, uid, claim, content):
+        b_s = 0 #TMP -- should probably leave out from the SQL query
+        b_s += 2 * content.count('iddqd') #testing purposes only...
+        
         new_post = int(web.insert('post', uid=uid,
                                   claim=claim,
-                                  broad_support=-1))#TMP -- should probably leave out
-        web.insert('post_content', pid=new_post, raw=content, tokens = 'TODO', safe_html='TODO')
+                                  broad_support=b_s))
+        web.insert('post_content', pid=new_post,
+                   #these args are automatically sqlquoted?
+                   raw=content,  
+                   tokens = ' '.join(self.search.tokens(content)),
+                   safe_html='TODO')
         
         self.vote(uid, new_post)
         search.add_article(self.get_post(new_post, True))        
-        #return new_post
 
+        return new_post
+
+    #TODO: this laziness system works, but is kinda ugly.  We should fix it.
     def get_post(self, pid, content=False):
         post = web.select('post', where='id=%d' % pid)
 
-        if len(post) is 0: return None #TODO raise something
- 
-        if content == True:
-            lazies = {
-                'raw' : (lambda : web.query('select raw from post_content where pid=%d' % pid)[0].raw),
-                'safe_html' : (lambda : web.query('select safe_html from post_content where pid=%d' % pid)[0].safe_html),
-                'tokens' : (lambda : web.query('select tokens from post_content where pid=%d' % pid)[0].tokens)
+        if len(post) is 0: raise Exception("article with pid %d not found" % pid)
+
+        if content == False:
+            return post[0]
+
+        lazies = {
+            'raw' : (lambda : web.query('select raw from post_content where pid=%d' % pid)[0].raw),
+            'safe_html' : (lambda : web.query('select safe_html from post_content where pid=%d' % pid)[0].safe_html),
+            'tokens' : (lambda : web.query('select tokens from post_content where pid=%d' % pid)[0].tokens)
             }
             
             lazies.update(post[0])
@@ -107,29 +123,26 @@ class State:
         else:
             return post[0]
 
-    def get_random_posts(self, count):
-        return web.select('post', order='rand', limit='%d' % count)
+    #TODO: after get_post is fixed, optimize, by going back to grabbing them.
+    def get_random_pids(self, count):
+        return [p.id for p in web.select('post', order='rand()', limit='%d' % count)]
 
-    def vote(self, uid, pid):
-        #let's avoid return values unless we know we need them
-
-        #previous_vote = web.select('vote',
-        #                           where = 'uid=%d and pid=%d' % (uid, pid))
-        #if len(previous_vote) is not 0:
-        #    vote = previous_vote[0]
-        #else:
-        #    vote = int(web.insert('vote', uid=uid, pid=pid))
-        #return vote
+    def vote(self, uid, pid, term=None):
         if len(web.select('vote', where='uid=%d and pid=%d' % (uid, pid))) == 0:
             web.insert('vote', uid=uid, pid=pid)
-
         # otherwise vote already exists -- do nothing
+
+        #TODO: validate term
+        if term != None  and  len(web.select('relevance', where='uid=%d and pid=%d and term=%s' % (uid, pid, web.sqlquote(term)))) == 0:
+            #print >> sys.stderr, "STATE: vote term: [%s]" % term #terms are bare
+            web.insert('relevance', uid=uid, pid=pid, term=web.sqlquote(term))
 
     def voted_for(self, uid, pid):
         return len(web.select('vote', where='uid=%d and pid=%d' % (uid, pid))) > 0
 
     def update_support(self, pid, support):
         web.update('post', where='id=%d' % pid, broad_support=support)
+        self.search.update_support(pid, support)
 
     def dump_votes(self):
         votes = web.select('vote')
@@ -198,13 +211,25 @@ class State:
         return retval
 
     def get_term_popularity(self, term):
-        return web.query('select count(*) from relevance where term=%s' % sqlquote(term))['count(*)']
+        print >> sys.stderr, "STATE: term: [%s]" % term
+        return web.query('select count(*) from relevance where term="%s"' % web.sqlquote(term))[0]['count(*)']
 
     def get_term_in_clusters(self, term, clusters):
-        return [r.pid for r in web.select('relevance', where='term=' + web.sqlquote(term) + ' and cid in (' + sqllist(clusters) + ')')]
+        print >> sys.stderr, "STATE: clusters: ", clusters
+        #It looks like keyword arguments (like those used in web.insert in _vote_())
+        #get quoted twice, if used in combination with sqlquote()
+        #TODO: force web.py to do it right, rather than matching them
+        return [r.pid for r in
+            web.query('''
+                select relevance.pid from relevance
+                inner join user on relevance.uid=user.id
+                where relevance.term="%s" and user.cid in (%s)
+                ''' % (web.sqlquote(term),
+                       ', '.join([str(c) for c in clusters]))
+                      )]
+
 
     # TODO: fix below
-
     def getactive(self, uid):
         if uid not in self.active: return None
         return self.active[uid]
@@ -235,5 +260,7 @@ class State:
 #        self.connections[clust2].append(clust1)
 #        
     def connected_clusters(self, cluster):
-        return xrange(4) #temporary -- all clusters are connected
+        return [i for i in xrange(4)] #temporary -- all clusters are connected
 #        return self.connections[clust]
+
+the = State()
