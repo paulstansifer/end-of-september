@@ -46,7 +46,7 @@ class State:
                     db=self.database)
 
     def clear(self):
-        for table in ['user', 'ticket', 'post', 'vote', 'cluster', 'relevance']:
+        for table in ['user', 'ticket', 'post', 'post_content', 'vote', 'cluster', 'relevance', 'pullquote']:
             web.delete(table, where='1=1')
 
     #TODO: impose restrictions on name contents (Bobby Tables!)
@@ -80,7 +80,7 @@ class State:
 
     def get_uid_from_name(self, name):
         user = web.select('user', where='name=%s' % web.sqlquote(name))
-        if len(user) is 0: return Exception("user with name %s not found" % name)
+        if len(user) is 0: raise Exception("user with name %s not found" % name)
         return int(user[0].id)
 
     
@@ -88,17 +88,19 @@ class State:
         b_s = 0 #TMP -- should probably leave out from the SQL query
         b_s += 2 * content.count('iddqd') #testing purposes only...
         
-        new_post = int(web.insert('post', uid=uid,
+        pid = int(web.insert('post', uid=uid,
                                   claim=claim,
                                   broad_support=b_s))
-        web.insert('post_content', pid=new_post,
+        tokens = ' '.join(self.search.tokens(content))
+        web.insert('post_content', pid=pid,
                    #these args are automatically sqlquoted?
                    raw=content,  
-                   tokens = ' '.join(self.search.tokens(content)),
+                   tokens = tokens,
                    safe_html='TODO')
         
-        self.vote(uid, new_post)
-        return new_post
+        self.vote(uid, pid)
+        self.search.add_article_contents(tokens, pid, b_s)
+        return pid
 
     #TODO: this laziness system works, but is kinda ugly.  We should fix it.
     def get_post(self, pid, content=False):

@@ -44,10 +44,10 @@ def render_timedelta(td):
   return ret_val
     
 
-def render(post, templates, vote=None, username=None):
+def render(post, templates, vote=None, username=None, extras={}):
     claim = post.claim
     age = datetime.now() - post.date_posted
-    callout = "Maecenas nonummy. Nunc elit libero, porta et, commodo ut, mollis eu, diam."
+    callout = 'I think you\'re pretty sexy, but I hate it when you talk.'
     raw = post.raw()
     
     content = raw.replace(callout, callout+"<div class='quote'>" + callout + "</div>", 1)
@@ -59,8 +59,11 @@ def render(post, templates, vote=None, username=None):
 
     pid = str(post.id)
 
+    extras_rendered = '';
+    for (k, v) in extras.iteritems():
+      extras_rendered += "<b>"k + "</b>: " + str(v) + "<br/>"
     
-    ret_val = """
+    ret_val = ("""
     <h3>Claim: """+claim+"""</h3>
     <div id='summary"""+pid+"""' class='summary' style='display: inline'>
     &#8220;"""+callout+"""&#8221;
@@ -69,8 +72,8 @@ def render(post, templates, vote=None, username=None):
     <div id='contents"""+pid+"""' class='contents' style='display: none'>
     <div class='sidebar'>
     <div class='sidebarsection'>
-    """ + render_timedelta(age) + """ ago<br />
-    (<a href='javascript:shrink("""+pid+""")' class='ajaxy'>shrink</a>)
+    """ + render_timedelta(age) + """ ago<br />""" + extras_rendered +
+    """(<a href='javascript:shrink("""+pid+""")' class='ajaxy'>shrink</a>)
     </div>
     <sup>a</sup> <a href='http://en.wikipedia.org/wiki/Pet_eye_remover'>[wikipedia]</a><br />
     <sup>b</sup> <a href='http://en.wikipedia.org/wiki'>[wikipedia]</a><br />
@@ -82,7 +85,7 @@ def render(post, templates, vote=None, username=None):
     </div>
     <div class='postbody'>""" + content + """
     <!-- need to deal with call-outs -->
-    </div>"""
+    </div>""")
 
     if username != None:
         ret_val += "<div class='tools'>"

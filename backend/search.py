@@ -5,6 +5,7 @@ import state
 import operator
 import sys #TMP (debugging output)
 import random
+from datetime import timedelta, datetime
 
 #Search strategy: For each search term, we cast around nearby clusters
 #for the nearest people to have made such a search before.  We train a
@@ -23,9 +24,9 @@ class Search:
         self.guesser = Bayes()
         self.mainabase = xapian.WritableDatabase('yb-search', xapian.DB_CREATE_OR_OPEN)
 
-        indexer = xapian.TermGenerator()
+        self.indexer = xapian.TermGenerator()
         self.stemmer = xapian.Stem("english") #I18N
-        indexer.set_stemmer(self.stemmer)
+        self.indexer.set_stemmer(self.stemmer)
 
     def tokens(self, text):
         words = text.split() #just by whitespace, so far
@@ -36,9 +37,9 @@ class Search:
         
     #Term must be normalized and stemmed and everything first
     def get_term_exemplars(self, cid, term):
-        goal_count = int(math.ceil(math.sqrt(state.the.get_term_popularity(term))))
+        popularity = state.the.get_term_popularity(term)
+        goal_count = min(int(math.ceil(math.sqrt(popularity)))*2, popularity)
 
-        print >> sys.stderr, "EXEMPLARS: pop: %d  goal %d" % (state.the.get_term_popularity(term), goal_count)
 
         scope = set()
         results = []
@@ -105,7 +106,7 @@ class Search:
         print >> sys.stderr, "SEARCH: props sorted"
 
         #search for the eight best words
-        query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:8]] )
+        query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:12]] )
 
         enq = xapian.Enquire(self.mainabase)
         enq.set_query(
@@ -115,18 +116,37 @@ class Search:
             )
         mset = enq.get_mset(0, 25)
 
-        print >> sys.stderr, "SEARCH: mset: ", mset
-        #TODO: do something with the results
-        #use relevance, (optionally) recency, and locality to score
+        results = []
+        for m in mset:
+            doc = m.get_document()
+            post = state.the.get_post(int(doc.get_data()), True)
 
-    def add_article(self, post, score):
-        doc = xapian.Document()
-        doc.set_data(post.id)
-        doc.add_value(DOC_PID, str(post.id))
+            
+            for (pool, prob) in guesser.guess(post.tokens()):
+                if pool == "relevant":
+                    rel_prob = prob
+            score = rel_prob
+            score *= post.broad_support
+            if recent:
+                age = datetime.now() - post.date_posted
+                age_days = age.days + age.seconds/(60*60*24)
+                score /= math.sqrt(age_days)
+            results.append( (post, score, "rel: %f  b_s: %f  root age: %f" %
+                             (rel_prob, post.broad_support, sqrt(age_days)) ) )
+        results.sort(key=operator.itemgetter(1), reverse=True)
+
+        return results[:10]
         
+    def add_article(self, post, score):
+        self.add_article_contents(post.tokens, post.id, score)
+        
+    def add_article_contents(self, post_tokens, post_id, score):
+        doc = xapian.Document()
+        doc.set_data(str(post_id))
+        doc.add_value(DOC_PID, str(post_id))
 
-        indexer.set_document(doc)
-        indexer.index_text(post.tokens)
+        self.indexer.set_document(doc)
+        self.indexer.index_text(post_tokens)
 
         self.mainabase.add_document(doc)
 

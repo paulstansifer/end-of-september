@@ -50,7 +50,7 @@ claims = ['P implies Q.',
           ]
 
 sentences_general = [
-    'If you\'ll bear with me a moment, this will prove relevant',
+    'If you\'ll bear with me a moment, this will prove relevant.',
     'We\'re revoking your math license.',
     'Alice was the attacker, not Eve!',
     'This crypto system isn\'t a thinly disuigsed Missy Elliot song; it\'s a thinly disguised Dire Straights song!',

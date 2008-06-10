@@ -119,13 +119,16 @@ class default(cookie_session):
     uid = self.uid_from_cookie()
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
 
-def post_wrap(post, username, uid):
-    return ('''<div class="post" id="post%d">
-      <a href="javascript:dismiss(%d)" class="dismisser">
-      <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
-            % (post.id, post.id)
+def post_wrap(post, username, uid, extras={}):
+  info = {'score': post.broad_support, 'id': post.id }
+  info.update(extras)
+  return ('''<div class="post" id="post%d">
+    <a href="javascript:dismiss(%d)" class="dismisser">
+    <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
+          % (post.id, post.id)
       + render_post.render(post, render,
-                           state.voted_for(uid, post.id), username)
+                           state.voted_for(uid, post.id),
+                           username, info)
       + "</div>")
 
 class frontpage(cookie_session, normal_style):
@@ -189,19 +192,17 @@ class search_results(cookie_session, normal_style):
     
     i = web.input()
     terms = i.search
-    if i.local:
-      uid = self.uid_from_cookie(username) #TODO error handling
-      import cProfile
-      print "<pre style='font-size: 70%; width: 500px;'>"
-      cProfile.run('search.local_search(1, "%s", True)' % terms)
-      print "</pre>"
-      #posts = search.local_search(state.get_user(uid).cid, terms, i.recent)
-    else:
-      posts = search.global_search(terms, i.recent)
 
-    content = 'TODO'
-    #for post in posts:
-    #  content += post_wrap(post)
+    uid = self.uid_from_cookie(username) #TODO error handling
+
+    if i.local:
+      scored_posts = search.local_search(state.get_user(uid).cid, terms, i.recent)
+    else:
+      scored_posts = search.global_search(terms, i.recent)
+
+    content = ""
+    for (post, score, why) in scored_posts:
+      content += post_wrap(post, username, uid, {"why": why})
 
     sidebar = render.search_sidebar(i.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
