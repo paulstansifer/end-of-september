@@ -2,9 +2,9 @@ body {
   color: Black;
   background-color: #BBBBBB;
   padding: 0px;
-  font-family: /*optima, candara, "Trebuchet MS",*/ georgia, serif;
+  font-family: /*optima, candara, "Trebuchet MS",*/ verdana, serif;
   width: 800px;
-  font-size: 11pt;
+  font-size: 80%;
 }
 
 /*span.lul {
