@@ -54,10 +54,10 @@ def pick_reps(list, num):
         return []
     return [list[randint(0,len(list)-1)] for x in xrange(1,num)]
 
-def eliminate_consec_dupes(list):
+def uniq_posts(list):
     retval = []
     for idx in xrange(len(list)):
-        if idx == 0 or list[idx-1] != list[idx]:
+        if idx == 0 or list[idx-1].id != list[idx].id:
             retval.append(list[idx])
     return retval
 
@@ -92,4 +92,4 @@ def gather(user, state):
 
     possible_articles.sort(cmp=cmp_recent_articles)
 
-    return eliminate_consec_dupes(possible_articles)
+    return uniq_posts(possible_articles)
