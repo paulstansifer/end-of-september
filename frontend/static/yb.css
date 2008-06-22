@@ -40,7 +40,7 @@ form {
 .tools {
   padding: 3px;
   text-align: right;
-  clear: both;
+  /*clear: both; tools is now inside the post float */
 }
 input{
   border-top: 1px solid #555555;

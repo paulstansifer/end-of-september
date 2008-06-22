@@ -6,12 +6,16 @@ function dismiss(id) {
 
 function expose(id) { //TODO: support earlier browsers
   document.getElementById('summary'+id).style.display = 'none';
-  document.getElementById('contents'+id).style.display = 'inline';
+  document.getElementById('contents'+id).style.display = 'block';
+  document.getElementById('sidebar_summary'+id).style.display = 'none';
+  document.getElementById('sidebar_contents'+id).style.display = 'block';
 }
 
 function shrink(id) { //TODO: support earlier browsers
-  document.getElementById('summary'+id).style.display = 'inline';
+  document.getElementById('summary'+id).style.display = 'block';
   document.getElementById('contents'+id).style.display = 'none';
+  document.getElementById('sidebar_summary'+id).style.display = 'block';
+  document.getElementById('sidebar_contents'+id).style.display = 'none';
 }
 
 function ajax(url) {

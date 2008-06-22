@@ -44,7 +44,7 @@ def render_timedelta(td):
   return ret_val
     
 
-def render(post, templates, vote=None, username=None, extras={}):
+def render(post, render, vote=None, username=None, term=None, extras={}):
     claim = post.claim
     age = datetime.now() - post.date_posted
     callout = 'I think you\'re pretty sexy, but I hate it when you talk.'
@@ -58,47 +58,22 @@ def render(post, templates, vote=None, username=None, extras={}):
     #it might be best just to make a little compiler in bison.  It could handle the callouts, too.
 
     pid = str(post.id)
-
-    extras_rendered = '';
-    for (k, v) in extras.iteritems():
-      extras_rendered += "<b>"k + "</b>: " + str(v) + "<br/>"
-    
-    ret_val = ("""
-    <h3>Claim: """+claim+"""</h3>
-    <div id='summary"""+pid+"""' class='summary' style='display: inline'>
-    &#8220;"""+callout+"""&#8221;
-    (<a href='javascript:expose("""+pid+""")' class='ajaxy'>view</a>)
-    </div>
-    <div id='contents"""+pid+"""' class='contents' style='display: none'>
-    <div class='sidebar'>
-    <div class='sidebarsection'>
-    """ + render_timedelta(age) + """ ago<br />""" + extras_rendered +
-    """(<a href='javascript:shrink("""+pid+""")' class='ajaxy'>shrink</a>)
-    </div>
-    <sup>a</sup> <a href='http://en.wikipedia.org/wiki/Pet_eye_remover'>[wikipedia]</a><br />
+    notes_rendered = """<sup>a</sup> <a href='http://en.wikipedia.org/wiki/Pet_eye_remover'>[wikipedia]</a><br />
     <sup>b</sup> <a href='http://en.wikipedia.org/wiki'>[wikipedia]</a><br />
     <sup>c</sup> Technically, this isn't true.<br />
     <sup>d</sup> <a href='http://www.youtube.com/watch?v=eBGIQ7ZuuiU'>[youtube]</a><br />
-    <sup>e</sup> If you squint at it. <br />
+    <sup>e</sup> If you squint at it. <br />"""
 
-    <!-- article sidebar goes here -->
-    </div>
-    <div class='postbody'>""" + content + """
-    <!-- need to deal with call-outs -->
-    </div>""")
+    extras_rendered = '';
+    for (k, v) in extras.iteritems():
+      extras_rendered += "<b>" + k + "</b>: " + str(v) + "<br/>"
 
-    if username != None:
-        ret_val += "<div class='tools'>"
-    
-        if vote:
-            ret_val += templates.vote_result(post)
-        else:
-            ret_val += (
-                '<form id="wtr'+ pid + '" name="wtr' + pid
-                + '" action="javascript:void(0)" method="get">'
-                + '<input type="button" onclick="javascript:voteon('
-                + pid + ',\'' + username +'\')" value="worth the read" />'
-                + '<div id="status' + pid + '"></div></form>')
-        ret_val += "</div>" #end 'tools'
-    ret_val += "</div>" #end 'contents'
-    return ret_val
+    if vote == True:
+      vote_result_rendered = render.vote_result(post.id)
+    else:
+      vote_result_rendered = None
+
+    return render.post(pid, 'inline', 'none', post.claim, callout,
+                       content, render_timedelta(age),
+                       extras_rendered, notes_rendered,
+                       vote_result_rendered, username, term)

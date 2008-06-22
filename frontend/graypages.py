@@ -57,7 +57,7 @@ class normal_style:
 <link rel="stylesheet" type="text/css" href="/static/yb.css" />
 <link rel="shortcut icon" href="/static/read.png" />''' % title
     for js in js_files:
-      print '<script src="/static/%s" type="text/javascript" />' % js
+      print '<script src="/static/%s" type="text/javascript"></script>' % js
 
     print "</head><body>"
     print render.sidebar_top(username)
@@ -93,7 +93,7 @@ class cookie_session:
       if uid == None: #username not recognized (rare -- mucking with cookies?)
         raise CantAuth("User name '" + username+"' not recognized.")
       ticket = cookies['ticket_for_' + username]
-    except KeyError: #name missing (common) or ticket missing (rare)
+    except KeyError: #name missing (cookies cleared?) or ticket missing (rare)
       raise CantAuth("Not logged in.")
     if state.check_ticket(uid, ticket):
       web.setcookie('name', username, expires=3600*24*90)
@@ -119,7 +119,7 @@ class default(cookie_session):
     uid = self.uid_from_cookie()
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
 
-def post_wrap(post, username, uid, extras={}):
+def post_wrap(post, username, uid, term=None, extras={}):
   info = {'score': post.broad_support, 'id': post.id }
   info.update(extras)
   return ('''<div class="post" id="post%d">
@@ -127,8 +127,8 @@ def post_wrap(post, username, uid, extras={}):
     <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
           % (post.id, post.id)
       + render_post.render(post, render,
-                           state.voted_for(uid, post.id),
-                           username, info)
+                           vote=state.voted_for(uid, post.id),
+                           username=username, term=term, extras=info)
       + "</div>")
 
 class frontpage(cookie_session, normal_style):
@@ -196,14 +196,14 @@ class search_results(cookie_session, normal_style):
     uid = self.uid_from_cookie(username) #TODO error handling
 
     if i.local:
-      scored_posts = search.local_search(state.get_user(uid).cid, terms, i.recent)
+      results = search.local_search(state.get_user(uid).cid, terms, i.recent)
     else:
-      scored_posts = search.global_search(terms, i.recent)
+      results = search.global_search(terms, i.recent)
 
     content = ""
-    for (post, score, why) in scored_posts:
-      content += post_wrap(post, username, uid, {"why": why})
-
+    for result in results:
+      content += post_wrap(result.post, username, uid, result.term, {"score": result.score})
+      
     sidebar = render.search_sidebar(i.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 

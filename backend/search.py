@@ -19,6 +19,17 @@ DOC_PID = 0
 BROAD_SUPPORT = "B"
 
 
+def _post_age_score(post):
+    age = datetime.now() - post.date_posted
+    age_days = age.days + age.seconds/(60*60*24)
+    return 1 / math.sqrt(age_days) #more recent is better, but it falls off
+
+class SearchResult:
+    def __init__(self, post, term, score):
+        self.post = post
+        self.term = term
+        self.score = score
+
 class Search:
     def __init__(self):
         self.guesser = Bayes()
@@ -28,11 +39,14 @@ class Search:
         self.stemmer = xapian.Stem("english") #I18N
         self.indexer.set_stemmer(self.stemmer)
 
+    def stem(self, word):
+        return self.stemmer(word.lower())
+
     def tokens(self, text):
         words = text.split() #just by whitespace, so far
         ret_val = []
         for word in words:
-            ret_val.append(self.stemmer(word.lower()))
+            ret_val.append(self.stem(word))
         return ret_val
         
     #Term must be normalized and stemmed and everything first
@@ -68,10 +82,12 @@ class Search:
 
         return results[:goal_count]
 
-    def local_search(self, cid, term, recent):
+
+    def local_search(self, cid, term_unstemmed, recent):
+        term = self.stem(term_unstemmed)
         exemplar_pids = self.get_term_exemplars(cid, term)
         if len(exemplar_pids) < 4:
-            pass #TODO revert to fulltext search
+            return self.fulltext(cid, term, recent)
 
         print >> sys.stderr, "SEARCH: %s exemplars" % len(exemplar_pids)
         
@@ -113,6 +129,7 @@ class Search:
 #            xapian.Query(xapian.Query.OP_AND,
                 query
 #                , ##Something scoring for BROAD_SUPPORT##)
+                ##Something scoring for recency, if appropriate
             )
         mset = enq.get_mset(0, 25)
 
@@ -128,14 +145,40 @@ class Search:
             score = rel_prob
             score *= post.broad_support
             if recent:
-                age = datetime.now() - post.date_posted
-                age_days = age.days + age.seconds/(60*60*24)
-                score /= math.sqrt(age_days)
-            results.append( (post, score, "rel: %f  b_s: %f  root age: %f" %
-                             (rel_prob, post.broad_support, sqrt(age_days)) ) )
-        results.sort(key=operator.itemgetter(1), reverse=True)
+                score *= _post_age_score(post)
+            results.append(SearchResult(post, term, score))
+            #results.append( (post, score, "rel: %f  b_s: %f  root age: %f" %
+            #                 (rel_prob, post.broad_support, sqrt(age_days)) ) )
+        results.sort(lambda x,y: cmp(x.score, y.score), reverse=True)
+        #results.sort(key=operator.itemgetter(1), reverse=True)
 
         return results[:10]
+
+    def fulltext(self, cid, term, recent):
+        print >>sys.stderr, "SEARCH: fulltext"
+        enq = xapian.Enquire(self.mainabase)
+        query = xapian.Query(xapian.Query.OP_OR, [term])
+        enq.set_query(query)
+        mset = enq.get_mset(0, 25)
+
+        print >>sys.stderr, "SEARCH: mset: ", mset
+
+        results = []
+        for m in mset:
+            doc = m.get_document()
+            post = state.the.get_post(int(doc.get_data()), True)
+
+            score = m.get_percent()
+            score *= post.broad_support
+            if recent:
+                score *= _post_age_score(post)
+            results.append(SearchResult(post, term, score))
+            #results.append( (post, score, "rel: %f  b_s: %f  root age: %f" %
+            #                 (rel_prob, post.broad_support, sqrt(age_days)) ) )
+        results.sort(lambda x,y: cmp(x.score, y.score), reverse=True)
+
+        return results[:10]
+        
         
     def add_article(self, post, score):
         self.add_article_contents(post.tokens, post.id, score)
