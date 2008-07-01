@@ -61,4 +61,10 @@ create table relevance (
     pid integer references post
     );
 
+create table pullquote (
+    pid integer references post,
+    start_idx integer,
+    len integer,
+    votes integer
+    );
     
