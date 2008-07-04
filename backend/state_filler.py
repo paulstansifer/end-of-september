@@ -9,7 +9,7 @@ from random import randint, sample
 import re
 import web
 
-from state import State
+import state, search
 import online
 
 paragraphs = ['''Lorem ipsum dolor sit amet, consectetuer adipiscing elit.  Curabitur scelerisque lectus. [/Fusce tempor/], mi a adipiscing tempus, lacus augue luctus sapien, ut commodo arcu tortor cursus leo. Nunc tortor ligula, accumsan non, volutpat in, tristique vel, est. Maecenas aliquam tortor ac purus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.''',
@@ -101,10 +101,13 @@ def populate_state(state):
             state_pid = state.create_post(1, sample(claims, 1)[0], body)
             pid_file_to_state[file_pid] = state_pid
             added_file_pids.add(file_pid)
+            
+            #state.add_to_history(file_uid, file_pid)  #put this back after we reduce the total number of votes
             state.vote(uid_file_to_state[file_uid],
                    pid_file_to_state[file_pid],
                    ['a','b','c','d'][topic])
         else:
+            #state.add_to_history(file_uid, file_pid)
             state.vote(uid_file_to_state[file_uid],
                    pid_file_to_state[file_pid])
     print "Recalculating scores . . ."
@@ -113,7 +116,8 @@ def populate_state(state):
     print "Done."
 
 if __name__ == '__main__':
-    s = State()
-    s.connect()
-    s.clear()
-    populate_state(s)
+    st = state.the
+    st.connect()
+    st.clear()
+
+    populate_state(st)

@@ -3,7 +3,7 @@ from reverend.thomas import Bayes
 import math
 import state
 import operator
-import sys #TMP (debugging output)
+from log import *
 import random
 from datetime import timedelta, datetime
 
@@ -21,8 +21,8 @@ BROAD_SUPPORT = "B"
 
 def _post_age_score(post):
     age = datetime.now() - post.date_posted
-    age_days = age.days + age.seconds/(60*60*24)
-    return 1 / math.sqrt(age_days) #more recent is better, but it falls off
+    age_hours = age.days*24.0 + age.seconds/(60.0*60)
+    return 1 / math.sqrt(age_hours) #more recent is better, but it falls off
 
 class SearchResult:
     def __init__(self, post, term, score):
@@ -38,6 +38,10 @@ class Search:
         self.indexer = xapian.TermGenerator()
         self.stemmer = xapian.Stem("english") #I18N
         self.indexer.set_stemmer(self.stemmer)
+
+    def clear(self):
+        self.mainabase = None;
+        self.mainabase = xapian.WritableDatabase('yb-search', xapian.DB_CREATE_OR_OVERWRITE)
 
     def stem(self, word):
         return self.stemmer(word.lower())
@@ -89,7 +93,7 @@ class Search:
         if len(exemplar_pids) < 4:
             return self.fulltext(cid, term, recent)
 
-        print >> sys.stderr, "SEARCH: %s exemplars" % len(exemplar_pids)
+        log_tmp("SEARCH: %s exemplars" % len(exemplar_pids))
         
         guesser = Bayes()
 
@@ -102,7 +106,7 @@ class Search:
         for neg_ex_pid in state.the.get_random_pids(len(exemplar_pids)): #probably cacheable, if we use a bigger pool
             guesser.train("random", state.the.get_post(neg_ex_pid, content=True).tokens())
 
-        print >> sys.stderr, "SEARCH: trained"
+        log_tmp("SEARCH: trained")
 
         proportions = [
             (tok, (count+1) / (1.0 * guesser.pools["random"].get(tok,0) + 1))
@@ -117,9 +121,7 @@ class Search:
 
         proportions.sort(key=operator.itemgetter(1), reverse=True)
 
-        print >> sys.stderr, "SEARCH: proportions: ", proportions
-
-        print >> sys.stderr, "SEARCH: props sorted"
+        log_tmp("SEARCH: proportions: " + proportions)
 
         #search for the eight best words
         query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:12]] )
@@ -155,13 +157,13 @@ class Search:
         return results[:10]
 
     def fulltext(self, cid, term, recent):
-        print >>sys.stderr, "SEARCH: fulltext"
+        log_tmp("SEARCH:FULLTEXT")
         enq = xapian.Enquire(self.mainabase)
         query = xapian.Query(xapian.Query.OP_OR, [term])
         enq.set_query(query)
         mset = enq.get_mset(0, 25)
 
-        print >>sys.stderr, "SEARCH: mset: ", mset
+        log_tmp("SEARCH:FULLTEXT: mset: " + mset)
 
         results = []
         for m in mset:

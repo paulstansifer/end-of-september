@@ -2,6 +2,7 @@ from math import sqrt
 #from state import State
 from random import randint, sample
 from datetime import timedelta, datetime
+from log import *
 import state
 import sys #TMP
 
@@ -75,20 +76,25 @@ def cmp_recent_articles(a, b):
     return  int(rate_recent_article(b)*1000) - int(rate_recent_article(a)*1000) 
 
 def gather(user, state):
-    nearby = pick_reps(state.connected_clusters(user.cid), 3)
+    nearby = state.connected_cluster_sample(user.cid, 3)
+    log_tmp("ONLINE: nearby  " + str(nearby))
 
-    delegates = []
+    delg_ids = []
 
     for c in nearby:
-        delegates = delegates + pick_reps(state.get_users_in_cluster(c), 4)
+        delg_ids += [d.id for d in state.get_sample_users_in_cluster(c,4)]
+
+    log_tmp("ONLINE: delegates " + str(delg_ids))
 
     possible_articles = []
-    for delg in delegates:
+    for delg_id in delg_ids:
         #if users' implicit votes for their own articles are not stored
         #explicitly, we need to factor them in here.  Also, we might want to give the
         #self-votes a little more power at this point, just to get articles started
-        votes = state.recent_votes_by_uid(delg)
+        votes = state.recent_unviewed_votes(delg_id, user.id, 7)
+        log_tmp("ONLINE: new votes " + str(votes))
         possible_articles += [state.get_post(vote.pid, content=True) for vote in votes]
+        log_tmp("ONLINE: possible articles count " + str(len(possible_articles)))
 
     possible_articles.sort(cmp=cmp_recent_articles)
 

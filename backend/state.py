@@ -45,9 +45,17 @@ class State:
                     pw='',
                     db=self.database)
 
-    def clear(self):
-        for table in ['user', 'ticket', 'post', 'post_content', 'vote', 'cluster', 'relevance', 'pullquote']:
-            web.delete(table, where='1=1')
+    def clear(self): #nuke everything in the database
+        for table in ['user', 'ticket', 'post', 'post_content', 'vote',
+                      'cluster', 'cluster_connection', 'relevance',
+                      'pull_quote', 'history']:
+            web.query('truncate %s' % table)
+        self.search.clear()
+
+        #temporary hack -- all clusters are connected
+        for a in xrange(0,4):
+            for b in xrange(0,4):
+                web.query('insert into cluster_connection values (%d, %d)' % (a,b))
 
     #TODO: impose restrictions on name contents (Bobby Tables!)
     def create_user(self, name, pwd, email):
@@ -120,6 +128,9 @@ class State:
         
         return web.storage(lazies)
 
+    def add_to_history(self, uid, pid):
+        web.insert('history', uid=uid, pid=pid)
+
     #TODO: after get_post is fixed, optimize, by going back to grabbing them.
     def get_random_pids(self, count):
         return [p.id for p in web.select('post', order='rand()', limit='%d' % count)]
@@ -147,27 +158,33 @@ class State:
 
     def votes_by_uid(self, uid):
         votes = web.select('vote', where = 'uid=%d' % uid)
-        if len(votes) is 0: return []
         return votes
 
-    def recent_votes_by_uid(self, uid):
-        #TODO: add a limit parameter and respect it.
-        return self.votes_by_uid(uid)
+    def recent_unviewed_votes(self, voter, viewer, limit):
+        #Get votes made by _voter_ for articles _viewer_ hasn't viewed.
+        return web.query(
+            '''select vote.pid from vote
+                 left outer join history
+                   on (vote.pid=history.pid and history.uid=%d)
+                 where vote.uid=%d and history.uid is null
+                 order by vote.date_voted desc
+                 limit %d''' % (viewer, voter, limit))
+        # the weird join is there because we care about the *absence* of an appropriate _history_ entry
+
 
     def votes_for_pid(self, pid):
         votes = web.select('vote', where = 'pid=%d' % pid) 
         if len(votes) is 0: return []
         return votes
 
-
     def get_num_clusters(self):
         num_query = web.select('vote', what='count(*)')
         num_clusters = num_query[0]['count(*)']
         return num_clusters
 
-    def get_users_in_cluster(self, cluster):
-        users = web.select('user', where='cid=%s' % web.sqlquote(cluster))
-        return [u.id for u in users]
+    def get_sample_users_in_cluster(self, cluster, count):
+        return web.query('select * from user where cid=%d order by rand() limit %d'
+                  % (cluster, count) )
         
     def _setcluster(self, uid, new_cluster):
         uid_user = self.get_user(uid)
@@ -225,6 +242,8 @@ class State:
                        ', '.join([str(c) for c in clusters]))
                       )]
 
+    
+
 
     # TODO: fix below
     def getactive(self, uid):
@@ -255,9 +274,20 @@ class State:
 #    def _add_connection(self, clust1, clust2):
 #        self.connections[clust1].append(clust2)
 #        self.connections[clust2].append(clust1)
-#        
+#
+
     def connected_clusters(self, cluster):
-        return [i for i in xrange(4)] #temporary -- all clusters are connected
-#        return self.connections[clust]
+        return [con.cid_to for con in
+           web.query('''select cid_to from cluster_connection
+                        where cid_from=%d''' % (cluster))]
+  
+    def connected_cluster_sample(self, cluster, count):
+        return [con.cid_to for con in
+           web.query('''select cid_to from cluster_connection
+                        where cid_from=%d
+                        order by rand()
+                        limit %d''' % (cluster, count))]
+
+
 
 the = State()

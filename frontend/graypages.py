@@ -4,7 +4,6 @@ import web
 from datetime import datetime
 
 import state, search
-from state_filler import populate_state
 import engine
 import render_post
 import online
@@ -145,9 +144,13 @@ class frontpage(cookie_session, normal_style):
     content = ''
 
     #recommendations = engine.recommend_for_cluster(state, user_cluster)
-    posts = online.gather(user, state)[0:6] #TODO: retirement
+    posts = online.gather(user, state)[0:6]
     for post in posts:
+      state.add_to_history(uid, post.id)
       content += post_wrap(post, user.name, uid)
+
+    if content == '': #why can't we use for-else here?
+      content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
 
     sidebar = render.ms_sidebar()
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
@@ -202,6 +205,7 @@ class search_results(cookie_session, normal_style):
 
     content = ""
     for result in results:
+      state.add_to_history(uid, result.post.id)
       content += post_wrap(result.post, username, uid, result.term, {"score": result.score})
       
     sidebar = render.search_sidebar(i.local)
