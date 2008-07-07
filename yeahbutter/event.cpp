@@ -52,6 +52,7 @@ void analyze::awake() {
   advanced_stat user_happiness;
   advanced_stat lifetime_views;
   for(int i = 0; i < registry.size(); i++) {
+    if(registry[i]->quit) continue;
     int views = registry[i]->views;
     double total_sat = registry[i]->total_satisfaction;
     lifetime_views.record(views);

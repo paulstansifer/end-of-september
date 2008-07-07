@@ -10,6 +10,9 @@
 
 class user;
 
+
+
+
 struct post {
 public:
   int ID;
@@ -22,8 +25,6 @@ public:
 
 struct subj_post : public post {
 public:
-  int ID;
-  int author;
   double qual_a, qual_b, qual_c;
   double slant;
   double length;

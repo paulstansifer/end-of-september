@@ -40,6 +40,8 @@ public:
   
   int views;
   double total_satisfaction;
+
+  bool quit;
   
   user();
   

@@ -8,6 +8,6 @@
 mkfifo inwards
 mkfifo outwards
 
-cat inwards | ./yeahbutter dl | tee user | ./dummy_analyzer r | tee analyzer > outwards &
+cat inwards | ../yeahbutter dl | tee user | $* | tee analyzer > outwards &
  
 cat blank outwards > inwards

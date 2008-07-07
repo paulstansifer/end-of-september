@@ -67,9 +67,15 @@ int main (int argc, char * const argv[]) {
     } else if(action == string("GET")) {
       cin >> user; //actually, we don't care, because we're the dummy analyzer
       cout << get_a_post() << endl;
+    } else if(action == string("JOIN")) {
+      cin >> user; //don't care
+    } else if(action == string("CLEAR")) {
+      //don't care
     } else if(action == string("QUIT")) {
+      cerr << "Quitting..." << endl;
       break;
     } else {
+      cerr << "Unrecognized command '" << action << "', quitting." << endl;
       break;
     }
   }

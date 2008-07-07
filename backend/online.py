@@ -2,6 +2,7 @@ from math import sqrt
 #from state import State
 from random import randint, sample
 from datetime import timedelta, datetime
+from log import *
 import state
 import sys #TMP
 
@@ -54,10 +55,10 @@ def pick_reps(list, num):
         return []
     return [list[randint(0,len(list)-1)] for x in xrange(1,num)]
 
-def eliminate_consec_dupes(list):
+def uniq_posts(list):
     retval = []
     for idx in xrange(len(list)):
-        if idx == 0 or list[idx-1] != list[idx]:
+        if idx == 0 or list[idx-1].id != list[idx].id:
             retval.append(list[idx])
     return retval
 
@@ -72,24 +73,30 @@ def rate_recent_article(article):
     return article.broad_support - sqrt(age) * 0.1
 
 def cmp_recent_articles(a, b):
-    return  int(rate_recent_article(b)*1000) - int(rate_recent_article(a)*1000) 
+    return cmp(rate_recent_article(b), rate_recent_article(a)) 
 
 def gather(user, state):
-    nearby = pick_reps(state.connected_clusters(user.cid), 3)
+    log_tmp("ONLINE: cid " + str(user.cid))
+    nearby = state.connected_cluster_sample(user.cid, 3)
+    log_tmp("ONLINE: nearby  " + str(nearby))
 
-    delegates = []
+    delg_ids = []
 
     for c in nearby:
-        delegates = delegates + pick_reps(state.get_users_in_cluster(c), 4)
+        delg_ids += [d.id for d in state.get_sample_users_in_cluster(c,4)]
+
+    log_tmp("ONLINE: delegates " + str(delg_ids))
 
     possible_articles = []
-    for delg in delegates:
+    for delg_id in delg_ids:
         #if users' implicit votes for their own articles are not stored
         #explicitly, we need to factor them in here.  Also, we might want to give the
         #self-votes a little more power at this point, just to get articles started
-        votes = state.recent_votes_by_uid(delg)
-        possible_articles += [state.get_post(vote.pid, content=True) for vote in votes]
+        votes = state.recent_unviewed_votes(delg_id, user.id, 4)
+        log_tmp("ONLINE: new votes " + str(votes))
+        possible_articles += [state.get_post(vote, content=True) for vote in votes]
+        log_tmp("ONLINE: possible articles count " + str(len(possible_articles)))
 
     possible_articles.sort(cmp=cmp_recent_articles)
 
-    return eliminate_consec_dupes(possible_articles)
+    return uniq_posts(possible_articles)

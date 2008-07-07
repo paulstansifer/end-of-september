@@ -1,3 +1,5 @@
+$def with (wtrs)
+
 <div class='sidebarsection'>
 <p>
 Pick articles you find valuble and insightful, and you'll get more like them.
@@ -9,8 +11,8 @@ The best articles appeal to people from many different perspectives.
 <div class='sidebarsection'>
 Articles that are worth the read for you are saved for later reference.  Some recent ones:
 <ul id='recentwtr'>
-<li> <span class='lul'><a class='listedlink' href='/article/4523'>"Maecenas nonummy.  Nunc elit libero, porta et, commodo ut, mollis eu, diam."</a></span> </li>
-<li> <span class='lul'><a class='listedlink' href='/article/23423'>Civil liberties are a vital part of a functioning society</a></span> </li>
+$for post in wtrs:
+    <li> <span class='lul'><a class='listedlink' href='/view/$post.id'>$post.claim</a></span> </li>
 </ul>
 <div style="text-align:right"><a href='wtrsearch'>more...</a></div>
 </div>

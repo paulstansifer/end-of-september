@@ -30,6 +30,8 @@ stat::stat() {
 }
 
 void stat::record(double v) {
+  if(v < 0)
+    throw 0;
   if(v < min)
     min = v;
   if(v > max)
@@ -51,6 +53,7 @@ void advanced_stat::record(double v) {
 
 string advanced_stat::summarize() {
   sort(vals.begin(), vals.end());
+  if(vals.size() == 0) return "(nothing yet)";
   double q1 = vals[hits/4];
   double med = vals[hits/2];
   double q3 = vals[3*hits/4];

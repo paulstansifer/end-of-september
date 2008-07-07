@@ -4,7 +4,6 @@ import web
 from datetime import datetime
 
 import state, search
-from state_filler import populate_state
 import engine
 import render_post
 import online
@@ -22,6 +21,7 @@ urls = ('/favicon.ico', 'favicon',
         '/users/(.*)/search', 'search_results',
         '/users/(.*)/compose', 'compose',
         '/users/(.*)/vote/wtr(.*)', 'vote',
+        '/users/(.*)/vote/callout', 'callout',
         '/admin/recluster', 'recluster')
 
 # get the system state clearinghouse
@@ -57,7 +57,7 @@ class normal_style:
 <link rel="stylesheet" type="text/css" href="/static/yb.css" />
 <link rel="shortcut icon" href="/static/read.png" />''' % title
     for js in js_files:
-      print '<script src="/static/%s" type="text/javascript" />' % js
+      print '<script src="/static/%s" type="text/javascript"></script>' % js
 
     print "</head><body>"
     print render.sidebar_top(username)
@@ -72,6 +72,12 @@ class normal_style:
 class CantAuth(Exception):
   def __init__(self, msg):
     self.msg = msg
+
+class IllegalAction(Exception):
+  def __init__(self, msg):
+    self.msg = msg
+
+
 
 #Private, but non-sensitive activities are accessible with a cookie login
 class cookie_session:
@@ -93,7 +99,7 @@ class cookie_session:
       if uid == None: #username not recognized (rare -- mucking with cookies?)
         raise CantAuth("User name '" + username+"' not recognized.")
       ticket = cookies['ticket_for_' + username]
-    except KeyError: #name missing (common) or ticket missing (rare)
+    except KeyError: #name missing (cookies cleared?) or ticket missing (rare)
       raise CantAuth("Not logged in.")
     if state.check_ticket(uid, ticket):
       web.setcookie('name', username, expires=3600*24*90)
@@ -119,13 +125,16 @@ class default(cookie_session):
     uid = self.uid_from_cookie()
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
 
-def post_wrap(post, username, uid):
-    return ('''<div class="post" id="post%d">
-      <a href="javascript:dismiss(%d)" class="dismisser">
-      <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
-            % (post.id, post.id)
+def post_wrap(post, username, uid, term=None, extras={}):
+  info = {'score': post.broad_support, 'id': post.id }
+  info.update(extras)
+  return ('''<div class="post" id="post%d">
+    <a href="javascript:dismiss(%d)" class="dismisser">
+    <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
+          % (post.id, post.id)
       + render_post.render(post, render,
-                           state.voted_for(uid, post.id), username)
+                           vote=state.voted_for(uid, post.id),
+                           username=username, term=term, extras=info)
       + "</div>")
 
 class frontpage(cookie_session, normal_style):
@@ -142,11 +151,15 @@ class frontpage(cookie_session, normal_style):
     content = ''
 
     #recommendations = engine.recommend_for_cluster(state, user_cluster)
-    posts = online.gather(user, state)[0:6] #TODO: retirement
+    posts = online.gather(user, state)[0:6]
     for post in posts:
+      state.add_to_history(uid, post.id)
       content += post_wrap(post, user.name, uid)
 
-    sidebar = render.ms_sidebar()
+    if content == '': #why can't we use for-else here?
+      content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
+
+    sidebar = render.ms_sidebar([state.get_post(wtr) for wtr in state.recent_votes(uid, 4)])
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
 class article(cookie_session, normal_style):
@@ -165,7 +178,7 @@ class article(cookie_session, normal_style):
       real = False
       content = render_post.render(post, render)
 
-    self.package(render.ms_sidebar(), #TODO: make a special sidebar
+    self.package('', #TODO: make a special sidebar
                  '<div class="post" id="post%d">' + content + '</div>',
                  real, username, js_files=['citizen.js'])
 
@@ -189,20 +202,19 @@ class search_results(cookie_session, normal_style):
     
     i = web.input()
     terms = i.search
+
+    uid = self.uid_from_cookie(username) #TODO error handling
+
     if i.local:
-      uid = self.uid_from_cookie(username) #TODO error handling
-      import cProfile
-      print "<pre style='font-size: 70%; width: 500px;'>"
-      cProfile.run('search.local_search(1, "%s", True)' % terms)
-      print "</pre>"
-      #posts = search.local_search(state.get_user(uid).cid, terms, i.recent)
+      results = search.local_search(state.get_user(uid).cid, terms, i.recent)
     else:
-      posts = search.global_search(terms, i.recent)
+      results = search.global_search(terms, i.recent)
 
-    content = 'TODO'
-    #for post in posts:
-    #  content += post_wrap(post)
-
+    content = ""
+    for result in results:
+      state.add_to_history(uid, result.post.id)
+      content += post_wrap(result.post, username, uid, result.term, {"score": result.score})
+      
     sidebar = render.search_sidebar(i.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
@@ -215,6 +227,18 @@ class vote(cookie_session):
     uid = self.uid_from_cookie(user)
     state.vote(uid, pid)
     print render.vote_result(state.get_post(pid))
+
+class callout(cookie_session):
+  def PUT(self, user, pid_str):
+    pid = int(pid_str)
+    web.webapi.internalerror = web.debugerror
+    uid = self.uid_from_cookie(user)
+
+    if not state.voted_for(uid, pid):
+      raise IllegalAction("You may only make a callout on an article that you've voted for")
+
+    #TODO: figure out somewhere to put the callout logic
+    
 
 class recluster:
   def GET(self):

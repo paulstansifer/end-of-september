@@ -14,6 +14,8 @@ int main (int argc, char * const argv[]) {
     << "flags:\n"
     << "  l: left-leaning user base\n"
     << "  d: dynamic users (leave if unsatisfied)\n" ;
+
+  cout << "CLEAR" << endl; // nuke existing data
   if(argc > 2) {
     char* args = argv[1];
     while(args++) {

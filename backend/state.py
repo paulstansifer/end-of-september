@@ -45,9 +45,17 @@ class State:
                     pw='',
                     db=self.database)
 
-    def clear(self):
-        for table in ['user', 'ticket', 'post', 'vote', 'cluster', 'relevance']:
-            web.delete(table, where='1=1')
+    def clear(self): #nuke everything in the database
+        for table in ['user', 'ticket', 'post', 'post_content', 'vote',
+                      'cluster', 'cluster_connection', 'relevance',
+                      'callout_votes', 'history']:
+            web.query('truncate %s' % table)
+        self.search.clear()
+
+        #temporary hack -- all clusters are connected
+        for a in xrange(0,5):
+            for b in xrange(0,5):
+                web.query('insert into cluster_connection values (%d, %d)' % (a,b))
 
     #TODO: impose restrictions on name contents (Bobby Tables!)
     def create_user(self, name, pwd, email):
@@ -80,7 +88,7 @@ class State:
 
     def get_uid_from_name(self, name):
         user = web.select('user', where='name=%s' % web.sqlquote(name))
-        if len(user) is 0: return Exception("user with name %s not found" % name)
+        if len(user) is 0: raise Exception("user with name %s not found" % name)
         return int(user[0].id)
 
     
@@ -88,13 +96,14 @@ class State:
         b_s = 0 #TMP -- should probably leave out from the SQL query
         b_s += 2 * content.count('iddqd') #testing purposes only...
         
-        new_post = int(web.insert('post', uid=uid,
+        pid = int(web.insert('post', uid=uid,
                                   claim=claim,
                                   broad_support=b_s))
-        web.insert('post_content', pid=new_post,
+        tokens = ' '.join(self.search.tokens(content))
+        web.insert('post_content', pid=pid,
                    #these args are automatically sqlquoted?
                    raw=content,  
-                   tokens = ' '.join(self.search.tokens(content)),
+                   tokens = tokens,
                    safe_html='TODO')
         
         self.vote(uid, new_post)
@@ -123,6 +132,9 @@ class State:
         else:
             return post[0]
 
+    def add_to_history(self, uid, pid):
+        web.insert('history', uid=uid, pid=pid)
+
     #TODO: after get_post is fixed, optimize, by going back to grabbing them.
     def get_random_pids(self, count):
         return [p.id for p in web.select('post', order='rand()', limit='%d' % count)]
@@ -150,27 +162,42 @@ class State:
 
     def votes_by_uid(self, uid):
         votes = web.select('vote', where = 'uid=%d' % uid)
-        if len(votes) is 0: return []
         return votes
 
-    def recent_votes_by_uid(self, uid):
-        #TODO: add a limit parameter and respect it.
-        return self.votes_by_uid(uid)
+    def recent_votes(self, voter, limit):
+        return [v.pid for v in
+            web.query(
+              '''select vote.pid from vote
+                   where uid=%d
+                   order by date_voted desc
+                   limit %d''' % (voter, limit))]
+
+    def recent_unviewed_votes(self, voter, viewer, limit):
+        #Get votes made by _voter_ for articles _viewer_ hasn't viewed.
+        return [v.pid for v in
+            web.query(
+              '''select vote.pid from vote
+                   left outer join history
+                     on (vote.pid=history.pid and history.uid=%d)
+                   where vote.uid=%d and history.uid is null
+                   order by vote.date_voted desc
+                   limit %d''' % (viewer, voter, limit))]
+        # the weird join is there because we care about the *absence* of an appropriate _history_ entry
+
 
     def votes_for_pid(self, pid):
         votes = web.select('vote', where = 'pid=%d' % pid) 
         if len(votes) is 0: return []
         return votes
 
-
     def get_num_clusters(self):
         num_query = web.select('vote', what='count(*)')
         num_clusters = num_query[0]['count(*)']
         return num_clusters
 
-    def get_users_in_cluster(self, cluster):
-        users = web.select('user', where='cid=%s' % web.sqlquote(cluster))
-        return [u.id for u in users]
+    def get_sample_users_in_cluster(self, cluster, count):
+        return web.query('select * from user where cid=%d order by rand() limit %d'
+                  % (cluster, count) )
         
     def _setcluster(self, uid, new_cluster):
         uid_user = self.get_user(uid)
@@ -228,27 +255,7 @@ class State:
                        ', '.join([str(c) for c in clusters]))
                       )]
 
-
-    # TODO: fix below
-    def getactive(self, uid):
-        if uid not in self.active: return None
-        return self.active[uid]
-
-    def setactive(self, uid, pid_list):
-        if uid not in self.active: return
-        if uid not in self.retired: return
-        self.retired[uid].extend(self.active[uid])
-        self.active[uid] = pid_list
-
-    def getretired(self, uid):
-        if uid not in self.retired: return None
-        return self.retired[uid]
-
-    def undoretire(self, uid, num_articles):
-        if uid not in self.active: return
-        if uid not in self.retired: return
-        self.active[uid] = self.retired[uid][-num_articles:]
-        self.retired[uid] = self.retired[uid][:-num_articles]
+    
 
     #clusters are in a graph, defined by _connections_
 #    def _process_connection_list(self, graph):
@@ -258,9 +265,27 @@ class State:
 #    def _add_connection(self, clust1, clust2):
 #        self.connections[clust1].append(clust2)
 #        self.connections[clust2].append(clust1)
-#        
+#
+
     def connected_clusters(self, cluster):
-        return [i for i in xrange(4)] #temporary -- all clusters are connected
-#        return self.connections[clust]
+        return [con.cid_to for con in
+           web.query('''select cid_to from cluster_connection
+                        where cid_from=%d''' % (cluster))]
+  
+    def connected_cluster_sample(self, cluster, count):
+        return [con.cid_to for con in
+           web.query('''select cid_to from cluster_connection
+                        where cid_from=%d
+                        order by rand()
+                        limit %d''' % (cluster, count))]
+    
+    def add_callout(self, pid, start, end, voter):
+        web.query('insert into callout_votes values (%d, %d, %d, %d)' 
+                  % (pid, start, end, voter))
+        #TODO handle repeat votes -- update?
+
+    def callouts_for(self, pid):
+        return web.query('select * from callout_votes where pid=%d' % pid)
+
 
 the = State()
