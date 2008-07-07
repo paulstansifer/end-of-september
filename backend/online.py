@@ -73,9 +73,10 @@ def rate_recent_article(article):
     return article.broad_support - sqrt(age) * 0.1
 
 def cmp_recent_articles(a, b):
-    return  int(rate_recent_article(b)*1000) - int(rate_recent_article(a)*1000) 
+    return cmp(rate_recent_article(b), rate_recent_article(a)) 
 
 def gather(user, state):
+    log_tmp("ONLINE: cid " + str(user.cid))
     nearby = state.connected_cluster_sample(user.cid, 3)
     log_tmp("ONLINE: nearby  " + str(nearby))
 
@@ -91,9 +92,9 @@ def gather(user, state):
         #if users' implicit votes for their own articles are not stored
         #explicitly, we need to factor them in here.  Also, we might want to give the
         #self-votes a little more power at this point, just to get articles started
-        votes = state.recent_unviewed_votes(delg_id, user.id, 7)
+        votes = state.recent_unviewed_votes(delg_id, user.id, 4)
         log_tmp("ONLINE: new votes " + str(votes))
-        possible_articles += [state.get_post(vote.pid, content=True) for vote in votes]
+        possible_articles += [state.get_post(vote, content=True) for vote in votes]
         log_tmp("ONLINE: possible articles count " + str(len(possible_articles)))
 
     possible_articles.sort(cmp=cmp_recent_articles)

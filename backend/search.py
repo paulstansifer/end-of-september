@@ -33,6 +33,7 @@ class SearchResult:
 class Search:
     def __init__(self):
         self.guesser = Bayes()
+        #TODO: use a configurable, absoulte path, so we don't have to deal with yb-search dirs everywhere
         self.mainabase = xapian.WritableDatabase('yb-search', xapian.DB_CREATE_OR_OPEN)
 
         self.indexer = xapian.TermGenerator()
@@ -121,7 +122,7 @@ class Search:
 
         proportions.sort(key=operator.itemgetter(1), reverse=True)
 
-        log_tmp("SEARCH: proportions: " + proportions)
+        log_tmp("SEARCH: proportions: " + str(proportions))
 
         #search for the eight best words
         query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:12]] )
