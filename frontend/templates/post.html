@@ -17,11 +17,11 @@ $def with (pid, s_s, s_c, claim, summary_rendered, contents_rendered, age_render
                    action='javascript:void(0)' method='get'>
             $if term == None:
                 <input type='button'
-                        onclick='javascript:voteon($pid, $username)'
+                        onclick='javascript:voteon($pid, "$username")'
                         value='worth the read' />
             $else:
                 <input type='button'
-                        onclick='javascript:voteon($pid, $username, $term)'
+                        onclick='javascript:voteon($pid, "$username", $term)'
                         value='worth the read for "$term"'/>
             <div id='status$pid'></div>
             </form>

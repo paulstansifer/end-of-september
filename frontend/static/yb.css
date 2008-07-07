@@ -64,7 +64,7 @@ input{
   border-right: 1px solid #555555;
   border-bottom: 1px solid #555555;
   background-color: #E4E4E4;
-  font-family: optima, candara, "Trebuchet MS", georgia, serif;
+  /*font-family: optima, candara, "Trebuchet MS", georgia, serif;*/
 }
 input[disabled] {
   border: 3px double #909090;
@@ -132,7 +132,6 @@ p {
   margin-bottom: 4pt;
   text-indent: 1em;
 }
-p.
 hr {
   margin-top: 4px;
   margin-bottom: 4px;

@@ -21,6 +21,7 @@ urls = ('/favicon.ico', 'favicon',
         '/users/(.*)/search', 'search_results',
         '/users/(.*)/compose', 'compose',
         '/users/(.*)/vote/wtr(.*)', 'vote',
+        '/users/(.*)/vote/callout', 'callout',
         '/admin/recluster', 'recluster')
 
 # get the system state clearinghouse
@@ -71,6 +72,12 @@ class normal_style:
 class CantAuth(Exception):
   def __init__(self, msg):
     self.msg = msg
+
+class IllegalAction(Exception):
+  def __init__(self, msg):
+    self.msg = msg
+
+
 
 #Private, but non-sensitive activities are accessible with a cookie login
 class cookie_session:
@@ -152,7 +159,7 @@ class frontpage(cookie_session, normal_style):
     if content == '': #why can't we use for-else here?
       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
 
-    sidebar = render.ms_sidebar()
+    sidebar = render.ms_sidebar([state.get_post(wtr) for wtr in state.recent_votes(uid, 4)])
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
 class article(cookie_session, normal_style):
@@ -171,7 +178,7 @@ class article(cookie_session, normal_style):
       real = False
       content = render_post.render(post, render)
 
-    self.package(render.ms_sidebar(), #TODO: make a special sidebar
+    self.package('', #TODO: make a special sidebar
                  '<div class="post" id="post%d">' + content + '</div>',
                  real, username, js_files=['citizen.js'])
 
@@ -220,6 +227,18 @@ class vote(cookie_session):
     uid = self.uid_from_cookie(user)
     state.vote(uid, pid)
     print render.vote_result(state.get_post(pid))
+
+class callout(cookie_session):
+  def PUT(self, user, pid_str):
+    pid = int(pid_str)
+    web.webapi.internalerror = web.debugerror
+    uid = self.uid_from_cookie(user)
+
+    if not state.voted_for(uid, pid):
+      raise IllegalAction("You may only make a callout on an article that you've voted for")
+
+    #TODO: figure out somewhere to put the callout logic
+    
 
 class recluster:
   def GET(self):
