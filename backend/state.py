@@ -48,13 +48,13 @@ class State:
     def clear(self): #nuke everything in the database
         for table in ['user', 'ticket', 'post', 'post_content', 'vote',
                       'cluster', 'cluster_connection', 'relevance',
-                      'pull_quote', 'history']:
+                      'callout_votes', 'history']:
             web.query('truncate %s' % table)
         self.search.clear()
 
         #temporary hack -- all clusters are connected
-        for a in xrange(0,4):
-            for b in xrange(0,4):
+        for a in xrange(0,5):
+            for b in xrange(0,5):
                 web.query('insert into cluster_connection values (%d, %d)' % (a,b))
 
     #TODO: impose restrictions on name contents (Bobby Tables!)
@@ -160,15 +160,24 @@ class State:
         votes = web.select('vote', where = 'uid=%d' % uid)
         return votes
 
+    def recent_votes(self, voter, limit):
+        return [v.pid for v in
+            web.query(
+              '''select vote.pid from vote
+                   where uid=%d
+                   order by date_voted desc
+                   limit %d''' % (voter, limit))]
+
     def recent_unviewed_votes(self, voter, viewer, limit):
         #Get votes made by _voter_ for articles _viewer_ hasn't viewed.
-        return web.query(
-            '''select vote.pid from vote
-                 left outer join history
-                   on (vote.pid=history.pid and history.uid=%d)
-                 where vote.uid=%d and history.uid is null
-                 order by vote.date_voted desc
-                 limit %d''' % (viewer, voter, limit))
+        return [v.pid for v in
+            web.query(
+              '''select vote.pid from vote
+                   left outer join history
+                     on (vote.pid=history.pid and history.uid=%d)
+                   where vote.uid=%d and history.uid is null
+                   order by vote.date_voted desc
+                   limit %d''' % (viewer, voter, limit))]
         # the weird join is there because we care about the *absence* of an appropriate _history_ entry
 
 
@@ -244,28 +253,6 @@ class State:
 
     
 
-
-    # TODO: fix below
-    def getactive(self, uid):
-        if uid not in self.active: return None
-        return self.active[uid]
-
-    def setactive(self, uid, pid_list):
-        if uid not in self.active: return
-        if uid not in self.retired: return
-        self.retired[uid].extend(self.active[uid])
-        self.active[uid] = pid_list
-
-    def getretired(self, uid):
-        if uid not in self.retired: return None
-        return self.retired[uid]
-
-    def undoretire(self, uid, num_articles):
-        if uid not in self.active: return
-        if uid not in self.retired: return
-        self.active[uid] = self.retired[uid][-num_articles:]
-        self.retired[uid] = self.retired[uid][:-num_articles]
-
     #clusters are in a graph, defined by _connections_
 #    def _process_connection_list(self, graph):
 #        for pair in graph:
@@ -287,7 +274,14 @@ class State:
                         where cid_from=%d
                         order by rand()
                         limit %d''' % (cluster, count))]
+    
+    def add_callout(self, pid, start, end, voter):
+        web.query('insert into callout_votes values (%d, %d, %d, %d)' 
+                  % (pid, start, end, voter))
+        #TODO handle repeat votes -- update?
 
+    def callouts_for(self, pid):
+        return web.query('select * from callout_votes where pid=%d' % pid)
 
 
 the = State()
