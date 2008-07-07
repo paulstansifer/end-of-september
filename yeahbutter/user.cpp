@@ -47,7 +47,7 @@ void upvote(user* u, post* p) {
 }
 
 user::user() {
-  registry.push_back(this);
+  quit = false;
   ID = nextID++;
   users_ever++;
   if(slanty_users && rnd_double() < 0.3) {  //a left-leaning user base
@@ -60,7 +60,7 @@ user::user() {
   p_slant = rnd_double()*0.75 + fabsf(slant)*0.25;
   
   skills = rnd_double();
-  //cerr << "@" << cur_time << " ";
+  cout << "JOIN " << ID << endl;
   cerr << "[new user: " << ID << " skills: " << skills << " ]" << endl;
 
   
@@ -74,6 +74,8 @@ user::user() {
   views = 0;
   total_satisfaction = 0;
   //p_length = (rnd_double() - 0.5) * 0.35;
+
+  registry.push_back(this);
 }
 
 double user::evaluate(post * pst) {
@@ -86,22 +88,20 @@ double user::evaluate(post * pst) {
 }
 
 void user::awake() {
-  bool quiting = false;
-  if(rnd_double() < 0.8) { // reading is more likely
+  if(rnd_double() < 0.6) { // reading is more likely
     while(rnd_double() < 0.6) {
       post * p = request_next();
       if(p == NULL)
         break;
-      quiting |= !view(p); //as a side-effect, possibly up-votes
-    }
-    if(quiting)
-      delete this; // I love C++.  In a twisted way.
-    else {
-      timeout += rnd_double() * activity_delay;
-      put_back();
+      quit |= !view(p); //as a side-effect, possibly up-votes
     }
   } else { // %20 chance: write
     create();
+  }
+
+  if(!quit){
+    timeout += rnd_double() * activity_delay;
+    put_back();
   }
 }
 
@@ -191,6 +191,12 @@ void populate_seed_users() {
   u2->slant = -0.5;
   u2->timeout = 1.0;
   
+  u1->create();
+  u2->create();
+  u1->create();
+  u2->create();
+  u1->create();
+  u2->create();
   u1->create();
   u2->create();
   

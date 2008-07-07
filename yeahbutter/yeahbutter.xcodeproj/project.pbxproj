@@ -14,6 +14,8 @@
 		DA5483750CDE5CE3005EFC8C /* user.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = DA5483730CDE5CE3005EFC8C /* user.h */; };
 		DA5483760CDE5CE3005EFC8C /* user.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DA5483740CDE5CE3005EFC8C /* user.cpp */; };
 		DA7084510D2C5D6700E87815 /* wed.sh in CopyFiles */ = {isa = PBXBuildFile; fileRef = DA7084500D2C5D6700E87815 /* wed.sh */; };
+		DA7BE64F0E1EF7C30024C4FB /* util.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DA7BE64D0E1EF7C30024C4FB /* util.cpp */; };
+		DA7BE6500E1EF7C30024C4FB /* util.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = DA7BE64E0E1EF7C30024C4FB /* util.h */; };
 		DA89A32F0CE86E2A00342DB0 /* main.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = DA89A32E0CE86E2A00342DB0 /* main.h */; };
 		DA9D44EB0D138C2500F8E6B2 /* event.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = DA9D44E90D138C2500F8E6B2 /* event.h */; };
 		DA9D44EC0D138C2500F8E6B2 /* event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DA9D44EA0D138C2500F8E6B2 /* event.cpp */; };
@@ -63,6 +65,7 @@
 				DA9D44EB0D138C2500F8E6B2 /* event.h in CopyFiles */,
 				DA9D48160D15C30E00F8E6B2 /* wed.pl in CopyFiles */,
 				DA7084510D2C5D6700E87815 /* wed.sh in CopyFiles */,
+				DA7BE6500E1EF7C30024C4FB /* util.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -77,6 +80,8 @@
 		DA5483730CDE5CE3005EFC8C /* user.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = user.h; sourceTree = "<group>"; };
 		DA5483740CDE5CE3005EFC8C /* user.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = user.cpp; sourceTree = "<group>"; };
 		DA7084500D2C5D6700E87815 /* wed.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = wed.sh; sourceTree = "<group>"; };
+		DA7BE64D0E1EF7C30024C4FB /* util.cpp */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.cpp.cpp; path = util.cpp; sourceTree = "<group>"; };
+		DA7BE64E0E1EF7C30024C4FB /* util.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = util.h; sourceTree = "<group>"; };
 		DA89A32E0CE86E2A00342DB0 /* main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = main.h; sourceTree = "<group>"; };
 		DA9D44E90D138C2500F8E6B2 /* event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = event.h; sourceTree = "<group>"; };
 		DA9D44EA0D138C2500F8E6B2 /* event.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = event.cpp; sourceTree = "<group>"; };
@@ -107,30 +112,24 @@
 		08FB7794FE84155DC02AAC07 /* yeahbutter */ = {
 			isa = PBXGroup;
 			children = (
-				08FB7795FE84155DC02AAC07 /* trunk */,
+				DA7084500D2C5D6700E87815 /* wed.sh */,
+				DA9D48150D15C30E00F8E6B2 /* wed.pl */,
+				DA9D44E90D138C2500F8E6B2 /* event.h */,
+				DA9D44EA0D138C2500F8E6B2 /* event.cpp */,
+				DA89A32E0CE86E2A00342DB0 /* main.h */,
+				08FB7796FE84155DC02AAC07 /* main.cpp */,
+				DA5483730CDE5CE3005EFC8C /* user.h */,
+				DA5483740CDE5CE3005EFC8C /* user.cpp */,
+				DA5483620CDE5837005EFC8C /* post.h */,
+				DA5483630CDE5837005EFC8C /* post.cpp */,
+				DA7BE64E0E1EF7C30024C4FB /* util.h */,
+				DA7BE64D0E1EF7C30024C4FB /* util.cpp */,
 				C6859E8C029090F304C91782 /* Documentation */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 				DAF1D2680CFBC10600047970 /* dummy.h */,
 				DAF1D2690CFBC10600047970 /* dummy.cpp */,
 			);
 			name = yeahbutter;
-			sourceTree = "<group>";
-		};
-		08FB7795FE84155DC02AAC07 /* trunk */ = {
-			isa = PBXGroup;
-			children = (
-				DA7084500D2C5D6700E87815 /* wed.sh */,
-				DA9D48150D15C30E00F8E6B2 /* wed.pl */,
-				DA9D44E90D138C2500F8E6B2 /* event.h */,
-				DA9D44EA0D138C2500F8E6B2 /* event.cpp */,
-				DA89A32E0CE86E2A00342DB0 /* main.h */,
-				DA5483730CDE5CE3005EFC8C /* user.h */,
-				DA5483740CDE5CE3005EFC8C /* user.cpp */,
-				DA5483620CDE5837005EFC8C /* post.h */,
-				DA5483630CDE5837005EFC8C /* post.cpp */,
-				08FB7796FE84155DC02AAC07 /* main.cpp */,
-			);
-			path = trunk;
 			sourceTree = "<group>";
 		};
 		1AB674ADFE9D54B511CA2CBB /* Products */ = {
@@ -229,6 +228,7 @@
 				DA5483650CDE5837005EFC8C /* post.cpp in Sources */,
 				DA5483760CDE5CE3005EFC8C /* user.cpp in Sources */,
 				DA9D44EC0D138C2500F8E6B2 /* event.cpp in Sources */,
+				DA7BE64F0E1EF7C30024C4FB /* util.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -23,15 +23,14 @@ post::post(user * author) {
 }
 
 void post::emit() {
-  cout << "POST " << ID << endl;
+  cout << "POST " << author << " " << ID << endl;
 }
 
 post::post() {
-  cin >> ID;
+  cin >> author >> ID;
 }
 
 subj_post::subj_post(double a, double b, double c, double slant, double len, user * author) : post(author) {
-  ID = nextID++;
   qual_a = a;
   qual_b = b;
   qual_c = c;
@@ -41,7 +40,7 @@ subj_post::subj_post(double a, double b, double c, double slant, double len, use
 }
 
 subj_post::subj_post() {
-  cin >> author >> qual_a >> qual_b >> qual_c >> slant >> length;
+  cin >> author >> ID >> qual_a >> qual_b >> qual_c >> slant >> length;
 }
 
 /*
