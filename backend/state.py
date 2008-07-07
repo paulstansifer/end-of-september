@@ -20,6 +20,8 @@ class State:
     def __init__(self, database='yb'):
         print >> sys.stderr, 'Initializing state . . .' 
 
+        self.active_cid = 0 #TODO get from DB        
+
         self.database = database
         random.seed()
 
@@ -81,10 +83,13 @@ class State:
                    last_used=datetime.now().isoformat())
         return ticket
     
-    def get_user(self, uid):
+    def get_user(self, uid):  # or '*, cid=...'?
         user = web.select('user', where = 'id=%s' % web.sqlquote(uid))
         if len(user) is 0: raise Exception("user with uid %d not found" % uid)
-        return user[0]
+
+        cluster_also = { 'cid': user['cid' + str(self.active_cid)] }
+        cluster_also.update(user[0])
+        return web.storage(cluster_also)
 
     def get_uid_from_name(self, name):
         user = web.select('user', where='name=%s' % web.sqlquote(name))
@@ -199,6 +204,7 @@ class State:
         return web.query('select * from user where cid=%d order by rand() limit %d'
                   % (cluster, count) )
         
+         #TODO remove
     def _setcluster(self, uid, new_cluster):
         uid_user = self.get_user(uid)
         if uid_user is None: return

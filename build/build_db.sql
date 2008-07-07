@@ -17,7 +17,8 @@ drop table if exists history;
 
 create table user (
     id serial              not null primary key,
-    cid integer            not null references cluster,
+    cid-0 integer          not null references cluster,  --TODO permanently store which cid is active
+    cid-1 integer          not null references cluster,
     name text              not null,
     password text          not null,
     email text             not null,
@@ -48,7 +49,6 @@ create table post_content (
     safe_html text,
     tokens text
     ) engine=InnoDB;
-
 
 create table vote (
     -- id serial primary key,
