@@ -1,0 +1,3 @@
+#!/bin/sh
+
+python src/driver.py $1 $2

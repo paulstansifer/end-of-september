@@ -1,0 +1,4 @@
+The rover uses occulsion of an imaginary circle surrounding it to
+determine which directions are more favorable.  Things cast darker
+"shadows" onto the circle, the closer they are.  Boulders have sharp
+shadows, and Martians have larger, fuzzier ones.
