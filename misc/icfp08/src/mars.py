@@ -20,9 +20,11 @@ class Mars:
     self.boulders = []
     self.martians = []
     self.cur_time = -1
+    self.tick = 0
 
   def set_time(self, t):
     self.cur_time = t
+    self.tick += 1
 
   def rec_boulder(self, c, r):
     for b in self.boulders:
@@ -57,15 +59,23 @@ class Mars:
   
     return (dx, dy)
 
+  
   def total_occulsion(self, (x,y), rover_dir):
     homeward = degrees(atan2(-y, -x))
-
-    #print "HW: ", homeward
+    home_dist = dist((x,y), (0,0))
     #TODO: increase temptation of the homeward direction as timelimit approaches ... if we can make it
     #TODO: add a 'stress level' to increase the penalty for turining when danger is near
-    occl = [-cos(radians(abs(homeward - d))) #adjust to face home: [-1.0 .. 1.0]
+    
+    occl = [-cos(radians(
+                   abs(homeward - d)
+                   ))  #adjust to face home: [-1.0 .. 1.0]
             + abs(rover_dir - d) / 720 # penalty of up to 0.5 for turning around
                  for d in xrange(0,360)]
+    
+
+    if self.tick % 10 == 0:
+      print " -------- "
+      print " --base-- ", occl[0], occl[90], occl[180], occl[270], occl[315]
 
     for b in self.boulders:
       if dist( (x,y), b.c) < 200:
@@ -74,10 +84,13 @@ class Mars:
           occl[d] += s(d) #cast shadow
 
     for m in self.martians:
-      if dist( (x,y), m.c) < 200:  #why wasn't this firing before?
+      if dist( (x,y), m.c) < 200: 
         s = m.get_shadow( (x,y) )
         for d in xrange(0,360):
           occl[d] += s(d) #cast shadow
+
+    if self.tick % 10 == 0:
+      print " --adj-- ", occl[0], occl[90], occl[180], occl[270], occl[315]
 
     return occl
 
@@ -87,32 +100,35 @@ def ang_diff(a, b):
   ret_val = abs(a-b)
   if ret_val > 180:
     return 360 - ret_val
-  else:
-    return ret_val
+  return ret_val
+
 
 class Boulder:
   def __init__(self, c , r):
     self.c = c; self.r = r;
 
-  def repel(self, c):
-    return diff_times(c, self.c, (dist(c, self.c) - self.r) ** (-2))
-
   def get_shadow(self, c):
-    focus = angle(c, self.c)
+    focus = (angle(c, self.c) + 360) % 360
     distance = dist(c, self.c) - 0.5 #count the rover
     if distance <= 0: distance = 0.001 #shouldn't happen, but it does...
     if self.r < distance: #usually true!
       radius = degrees(asin((self.r + .5) / (distance + .5)))
     else:
       radius = 185
-    if focus != focus or distance != distance or radius != radius:
-      print "AIE!", c, self.c, distance, radius, (self.r + 0.5), (distance + 0.5)
+
+    if self.r + 0.75 < distance: #usually true!
+      radius_p = degrees(asin((self.r + .5 + .75) / (distance + .5)))
+    else:
+      radius_p = 185
     if radius > 15:
       print "c!", focus, radius, rover.max_speed/distance
 
-    return lambda d : (5/distance * 
+
+    return lambda d : (12/distance * 
              (1 if ang_diff(d, focus) <= radius         #umbra
-              else 0.4/(ang_diff(d, focus)-radius + 1))) #falls off fast
+              else (0.5 if ang_diff(d, focus) <= radius_p #penumbra
+              else 0)))
+#0/((ang_diff(d, focus)-radius)/1.3 + 1))) #falls off fast
 
 class Martian:
   def __init__(self, c, heading, speed):
@@ -129,39 +145,22 @@ class Martian:
   def could_be(self, c, heading, speed):
     if ares.cur_time == self.last_seen:
       return False
-    if dist(c, self.c) / (ares.cur_time - self.last_seen) > max(self.max_speed, speed):
+    if dist(c, self.c) / (ares.cur_time - self.last_seen) > max(self.max_speed, speed) * 1.1:
       return False
     return True
 
   def get_shadow(self, c):
-    focus = angle(c, self.c)
+
+    focus = (angle(c, self.c) + 360) % 360
+    co = min(ang_diff(focus, self.heading),
+             ang_diff(focus, (self.heading+180) % 360))
+    co_coef = (90-co)*4 + 1
+    co_coef = 1
+    
     distance = dist(c, self.c) - 0.5
     if distance <= 0: distance = 0.001 #shouldn't happen, but it does...
-    radius = degrees(asin(0.9 / distance)) #count both radii
-    if radius > 10:
-      print "getting close!", radius, distance
 
-    return lambda d : (rover.max_speed)/distance * 1/( (d-focus)**2 + 1)
+    return lambda d : (5/distance * co_coef/( (co_coef*(ang_diff(d,focus))/15)**2 + 1)
+                       if ang_diff(d, focus) < 120 else 0)
 
 
-  def repel(self, c):
-    speed_ratio = self.max_speed / rover.max_speed #hope this is under 1!
-    #...
-    return diff_times(c, self.c, (dist(c, self.c) - 0.4) ** (-1) * 3) 
-
-  def can_outrace(self, dest_c, rover_c):
-    #TODO: do something about unseen martians
-    m_time = dist(self.c, dest_c) / self.max_speed
-    r_time = dist(rover_c, dest_c) / max_speed
-    return m_time < r_time
-
-  def speculate_dist(self):
-    (ares.cur_time - self.last_seen) * self.max_speed
-
-
-
-def any_can_outrace(dest_c, rover_c):
-  for m in ares.martians:
-    if m.can_outrace(dest_c, rover_c):
-      return True
-  return False

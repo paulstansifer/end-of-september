@@ -28,36 +28,31 @@ def move(turn, urgency=1):
 
   comm = ''
 
-  if abs(turn)*(1+urgency) > 90:
-    comm += 'b'
-  elif abs(turn)*(1+urgency) < 75:
-    comm += 'a'
+  if ares.cur_time < 2.5:
+    comm += 'a' #in the beginning, pick up speed
+  else:
+    if abs(turn)*(1+urgency) > 80:
+      comm += 'b'
+    elif abs(turn)*(1+urgency) < 65:
+      comm += 'a'
 
-  #TODO: record fishtailing
   if turn_state == 'R' and turn < hard_turn * r_inertia():
-    comm += 'l'; print 'uhr'
+    comm += 'l'
   elif turn_state == 'L' and turn > -hard_turn * r_inertia():
-    comm += 'r'; print 'uhl'
+    comm += 'r'
   elif turn_state == 'r' and turn < soft_turn * r_inertia():
-    comm += 'l'; print 'ur'
+    comm += 'l'
   elif turn_state == 'l' and turn > -soft_turn * r_inertia():
-    comm += 'r'; print 'ul'
+    comm += 'r'
   elif turn < -soft_turn / 2:
-    comm += 'l'; #print 'gl',
+    comm += 'l'
   elif soft_turn / 2 < turn:
-    comm += 'r'; #print 'gr',
-
-  print int(turn), comm,
+    comm += 'r'
 
   comm += ';'
 
   s.send(comm)
   
-def process_repulsion((dx, dy)):
-  turn = degrees(atan2(dy, dx)) - next_heading
-
-  move(turn)
-
 def process_occlusion(occl):
   best_occl = 999
   best_idx = 0
@@ -66,33 +61,10 @@ def process_occlusion(occl):
       best_occl = occl[i]
       best_idx = i
 
-  if best_occl > 1:
-    print "BEST: ", best_occl, best_idx
-    print occl
-    print "H", heading, "NH", next_heading, "I", best_idx
-
-  #print best_occl,
   urgency = occl[int(next_heading) % 360] - best_occl
-  #print next_heading, heading, best_idx,
   turn = best_idx - next_heading
   move(turn)
-  
-    
-def rotate((x,y), deg):
-  return (x*sin(radians(deg)), y*cos(radians(deg)))
-  
-def inside_vision((x,y)):
-  return False #TODO
-
-
-#root = Tk()
-#root.title('mars')
-
-#canvas = Canvas(root, width=500, height=500)
-
-
-#root.mainloop()
-
+      
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 if len(sys.argv) == 3:
   s.connect((sys.argv[1], int(sys.argv[2])))
@@ -101,7 +73,6 @@ else:
 
 s.send('a;')
 data = s.recv(1024).split(' ')
-if data[0] != 'I': print "What? ", data
 xsize = float(data[1])
 ysize = float(data[2])
 time_limit = float(data[3]) / 1000
@@ -139,7 +110,6 @@ while 1:
     turning_momentum = heading - last_heading
     next_heading = heading + turning_momentum
     ##TODO: figure out rotational acclr
-    #next_heading = heading + dturn(turn_state) * 0.1
     
     i = 7
     while i+1 < len(data):
