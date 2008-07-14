@@ -1,20 +1,14 @@
 import socket
-#from Tkinter import *
 from mars import *
 from math import *
 import sys
 
 def dturn(s):
-  if s == 'L':
-    return -hard_turn
-  elif s == 'l':
-    return -soft_turn
-  elif s == '-':
-    return 0
-  elif s == 'r':
-    return soft_turn
-  elif s == 'R':
-    return hard_turn
+  return {'L': -hard_turn,
+          'l': -soft_turn,
+          '-': 0,
+          'r': soft_turn,
+          'R': hard_turn}[s]
 
 #TODO: calculate momentum and figure it out
 def r_inertia():
@@ -64,8 +58,13 @@ def process_occlusion(occl):
   urgency = occl[int(next_heading) % 360] - best_occl
   turn = best_idx - next_heading
   move(turn)
-      
+
+#Initialization before event loop
+rover = Rover()
+ares = Mars()
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 if len(sys.argv) == 3:
   s.connect((sys.argv[1], int(sys.argv[2])))
 else:
@@ -92,10 +91,12 @@ next_heading = 0
 turning_momentum = 0
 run = 0
 
+# Event loop
 while 1:
-  #ignore all but the most recent message.  All we really care about is T anyways
-  #(the last thing from split is the empty message after the ';')
-  data = s.recv(1024).split(';')[-2].split(' ')
+  # Ignore all but most recent message; all we really care about is T anyways
+  # (the last thing from split is the empty message after the ';')
+  data = s.recv(1024).split(';')[0].split(' ')
+  print data
   
   if data[0] == 'T':
     last_heading = heading
@@ -140,8 +141,3 @@ while 1:
       sys.exit()
   #else:
   #  print data
-    
-  
-#  conn.send('a;')
-
-#conn.close()
