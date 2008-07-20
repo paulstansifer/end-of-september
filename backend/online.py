@@ -45,25 +45,12 @@ def _broad_support(votes, state):
     #sys.stderr.write(" [[ " + str(retval) + " ]] \n")
     return retval
 
-
-#TODO: this is potentially pretty slow, and it can leave us with duplicates
-#We could shuffle the lists with each offline update,
-#and advance through them, modulo a prime that changes each
-#time around.
-def pick_reps(list, num):
-    if len(list) == 0:
-        return []
-    return [list[randint(0,len(list)-1)] for x in xrange(1,num)]
-
 def uniq_posts(list):
     retval = []
     for idx in xrange(len(list)):
         if idx == 0 or list[idx-1].id != list[idx].id:
             retval.append(list[idx])
     return retval
-
-def pick_votes(user):
-    pass
 
 def rate_recent_article(article):
     #article = state.getpost(vote['pid'])
