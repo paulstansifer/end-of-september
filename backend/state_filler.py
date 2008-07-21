@@ -65,8 +65,6 @@ para = [sentences_1 + sentences_1 + sentences_1 + sentences_general,
         sentences_4 + sentences_4 + sentences_4 + sentences_general]
 
 
-passphrase = 'Some people have passphrases.  Bruce Schneier has an epic passpoem recounting the story of the three great cryptographers behind RSA.'
-
 def populate_state(state):
     print "Clearing state . . ."
     state.clear()
@@ -86,7 +84,7 @@ def populate_state(state):
 
         if not file_uid in added_file_uids:
             state_uid = state.create_user('_'.join(['user', file_uid]),
-                                          passphrase,
+                                          'password',
                                           ''.join([file_uid, '@gmail.com']))
             uid_file_to_state[file_uid] = state_uid
             added_file_uids.add(file_uid)

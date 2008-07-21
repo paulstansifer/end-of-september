@@ -10,19 +10,36 @@
 
 from datetime import datetime
 import web # Needed for database access
-import sys
-#import xfer
+from log import *
+import re
 import random # Needed for random cluster assignment hack.  Should disappear
 
 import search
 
+_name_validator = re.compile(r'^[\w.-]{1,32}$')
+def _validate_name(name):
+  if not _name_validator.match(name):
+    raise Exception("Invalid username: '%s'.  Usernames must be no more than 32 characters, and consist solely of alphanumerics, underscore, period, and dash" % name)
+
+_email_validator = re.compile(r'[^@]+@[a-z-]+([.][a-z-]+)+', re.I)
+def _validate_email_address(email):
+  if len(email) > 64: raise Exception("Invalid email address: '%s'.  We can only store 64 characters of email address.")
+  if not _email_validator.match(email):
+    raise Exception("Invalid email address: '%s'.  We won't be able to figure out how to send mail to that address.")
+#TODO: check for common mistakes that might not be mistakes in Javascript
+#_probable_email_address = re.compile(r'[\w.+-]+@[a-z-]+([.][a-z-]+)*[.][a-z]{2,4}', 'I')
+_pwd_validator = re.compile(r'^[^%]{4,64}$')  #TODO: permit '%'s when web.py can deal with it
+def _validate_password(pwd):
+  if not _pwd_validator.match(pwd):
+    raise Exception("Invalid password.  Passwords must be between 4 and 64 characters, and not contain the character '%'")
+
+
+#TODO: catch MySQL exceptions and raise custom ones.
+  
 class State:
     def __init__(self, database='yb'):
-        print >> sys.stderr, 'Initializing state . . .' 
-
-        self.active_cid = 0 #TODO get from DB        
-
-        self.database = database
+        log_dbg('Initializing state . . .')
+        
         random.seed()
 
         # as MySQL root: GRANT ALL ON yb.* to 'yeahbut'@'localhost';
@@ -31,42 +48,51 @@ class State:
             user='yeahbut',
             host='localhost',
             pw='',
-            db=self.database)
+            db=database)
 
-        self.cluster_size_cache = {}
+        web.load() #We want to use the DB before web.py starts totally
 
         #self.ssh_client = paramiko.SSHClient()
+        self.cluster_size_cache = {}
 
         self.search = search.the
+
+        try:
+          self.active_cid = web.query('select active_cid from globals')[0].active_cid;
+        except AttributeError:
+          self.active_cid = None #presumably, the first thing we'll do is clear the DB
+
         
     # For use when web server is NOT running
-    def connect(self):
-        web.connect(dbn='mysql',
-                    user='yeahbut',
-                    host='localhost',
-                    pw='',
-                    db=self.database)
+    def connect(self, database='yb'):
+        web.load()
 
     def clear(self): #nuke everything in the database
         for table in ['user', 'ticket', 'post', 'post_content', 'vote',
                       'cluster', 'cluster_connection', 'relevance',
-                      'callout_votes', 'history']:
+                      'callout_votes', 'history', 'globals']:
             web.query('truncate %s' % table)
         self.search.clear()
+
+        web.query('insert into globals values (active_cid=0)')
+        self.active_cid = 0
 
         #temporary hack -- all clusters are connected
         for a in xrange(0,5):
             for b in xrange(0,5):
                 web.query('insert into cluster_connection values (%d, %d)' % (a,b))
 
-    #TODO: impose restrictions on name contents (Bobby Tables!)
+    #TODO: impose restrictions on name contents 
+    #TODO: don't store password directly!
+    #NOTE: MySQL is case-insensitive by default.  Currently, we follow this convention in names.
     def create_user(self, name, pwd, email):
-        users_with_name = web.select('user',
-                                     where = 'name=%s' % web.sqlquote(name))
-        if len(users_with_name) is not 0: raise Exception("user already exists named %s" % name)
-        new_user = int(web.insert('user', name=name, password=pwd, email=email))
-        self._setcluster(new_user, random.randint(0,4)) #TODO temporary hack
-        return new_user
+      _validate_name(name)
+      _validate_password(pwd)
+      _validate_email_address(email)
+      fakecid = random.randint(0,4) #TODO temporary hack
+      new_user = int(web.insert('user', name=name, password=pwd, 
+                                email=email, cid0=fakecid, cid1=fakecid))
+      return new_user
 
     def check_ticket(self, uid, ticket):
         if len(web.select('ticket', where='uid=%d and ticket=%s' % (uid, web.sqlquote(ticket)))) == 0:
@@ -79,17 +105,17 @@ class State:
 
     def make_ticket(self, uid):
         ticket = str(random.randint(0, 2**128))
-        web.insert('ticket', uid=uid, ticket=ticket,
-                   last_used=datetime.now().isoformat())
+        #web.insert('ticket', uid=uid, ticket=ticket,
+        #           last_used=datetime.now().isoformat())
+
+        web.query('insert into ticket (uid, ticket) values (%d, %s)'  % (uid, web.sqlquote(ticket)))
         return ticket
     
-    def get_user(self, uid):  # or '*, cid=...'?
-        user = web.select('user', where = 'id=%s' % web.sqlquote(uid))
+    def get_user(self, uid):
+        user = web.query('select *, cid%d as cid from user where id=%d' % (self.active_cid, uid))
         if len(user) is 0: raise Exception("user with uid %d not found" % uid)
 
-        cluster_also = { 'cid': user['cid' + str(self.active_cid)] }
-        cluster_also.update(user[0])
-        return web.storage(cluster_also)
+        return user[0]
 
     def get_uid_from_name(self, name):
         user = web.select('user', where='name=%s' % web.sqlquote(name))
@@ -110,32 +136,28 @@ class State:
                    raw=content,  
                    tokens = tokens,
                    safe_html='TODO')
-        
-        self.vote(uid, new_post)
-        search.add_article(self.get_post(new_post, True))        
-
-        return new_post
+        self.vote(uid, pid)
+        self.search.add_article_contents(tokens, pid, b_s)
+        return pid
 
     #TODO: this laziness system works, but is kinda ugly.  We should fix it.
     def get_post(self, pid, content=False):
         post = web.select('post', where='id=%d' % pid)
-
+        
         if len(post) is 0: raise Exception("article with pid %d not found" % pid)
-
+        
         if content == False:
             return post[0]
-
+        
         lazies = {
             'raw' : (lambda : web.query('select raw from post_content where pid=%d' % pid)[0].raw),
             'safe_html' : (lambda : web.query('select safe_html from post_content where pid=%d' % pid)[0].safe_html),
             'tokens' : (lambda : web.query('select tokens from post_content where pid=%d' % pid)[0].tokens)
             }
             
-            lazies.update(post[0])
+        lazies.update(post[0])
         
-            return web.storage(lazies)
-        else:
-            return post[0]
+        return web.storage(lazies)
 
     def add_to_history(self, uid, pid):
         web.insert('history', uid=uid, pid=pid)
@@ -151,7 +173,7 @@ class State:
 
         #TODO: validate term
         if term != None  and  len(web.select('relevance', where='uid=%d and pid=%d and term=%s' % (uid, pid, web.sqlquote(term)))) == 0:
-            #print >> sys.stderr, "STATE: vote term: [%s]" % term #terms are bare
+            #log_dbg("STATE: vote term: [%s]" % term) #terms are bare
             web.insert('relevance', uid=uid, pid=pid, term=web.sqlquote(term))
 
     def voted_for(self, uid, pid):
@@ -201,16 +223,8 @@ class State:
         return num_clusters
 
     def get_sample_users_in_cluster(self, cluster, count):
-        return web.query('select * from user where cid=%d order by rand() limit %d'
-                  % (cluster, count) )
-        
-         #TODO remove
-    def _setcluster(self, uid, new_cluster):
-        uid_user = self.get_user(uid)
-        if uid_user is None: return
-        old_cluster = uid_user.cid
-        web.update('user', where='id=%d' % uid,
-                   cid=new_cluster)
+        return web.query('select *, cid%d as cid from user where cid%d=%d order by rand() limit %d'
+                  % (self.active_cid, self.active_cid, cluster, count) )
 
     def apply_clusters(self, assignments):
         for uid, cluster in assignments:
@@ -225,30 +239,31 @@ class State:
             return self.cluster_size_cache[cluster]
         else:
             rec = int(web.select('user', what='count(*)',
-                          where='cid=%d' % cluster)[0]['count(*)'])
+                          where='cid%d=%d' % (self.active_cid, cluster)
+                     )[0]['count(*)'])
             self.cluster_size_cache[cluster] = rec
             return rec
 
     def get_votes_by_pid_clustered(self, pid):
         self.cluster_count = 5 #TODO update with each rebasing, not here
-
+        
         vote_list = web.query('''
-        select user.cid, count(*) from vote
+        select user.cid%d as cid, count(*) from vote
         inner join user on vote.uid=user.id
         where pid=%d
-        group by user.cid
-        ''' % pid)
+        group by cid
+        ''' % (self.active_cid, pid))
         retval = [0 for c in xrange(self.cluster_count)]
         for record in vote_list:
             retval[record['cid']] = record['count(*)']
         return retval
 
     def get_term_popularity(self, term):
-        print >> sys.stderr, "STATE: term: [%s]" % term
+        log_tmp("STATE: term: [%s]" % term)
         return web.query('select count(*) from relevance where term="%s"' % web.sqlquote(term))[0]['count(*)']
 
     def get_term_in_clusters(self, term, clusters):
-        print >> sys.stderr, "STATE: clusters: ", clusters
+        log_tmp("STATE: clusters: %d" % clusters)
         #It looks like keyword arguments (like those used in web.insert in _vote_())
         #get quoted twice, if used in combination with sqlquote()
         #TODO: force web.py to do it right, rather than matching them
@@ -256,8 +271,10 @@ class State:
             web.query('''
                 select relevance.pid from relevance
                 inner join user on relevance.uid=user.id
-                where relevance.term="%s" and user.cid in (%s)
-                ''' % (web.sqlquote(term),
+                where relevance.term="%s" and user.cid%d in (%s)
+                ''' % (
+                       web.sqlquote(term),
+                       self.active_cid,
                        ', '.join([str(c) for c in clusters]))
                       )]
 

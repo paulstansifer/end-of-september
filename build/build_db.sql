@@ -2,6 +2,7 @@
 -- > mysql -u yeahbut yb < build_db.sql
 
 -- This is HIGHLY DESTRUCTIVE!
+drop table if exists globals;
 drop table if exists user;
 drop table if exists post;
 drop table if exists post_content;
@@ -15,14 +16,20 @@ drop table if exists history;
 
 --todo: should we declare everything NOT NULL?
 
+create table globals (
+    active_cid integer     not null default 0
+    ) engine=InnoDB;
+
 create table user (
     id serial              not null primary key,
-    cid-0 integer          not null references cluster,  --TODO permanently store which cid is active
-    cid-1 integer          not null references cluster,
-    name text              not null,
-    password text          not null,
-    email text             not null,
-    date_joined timestamp  not null default now()
+    cid0 integer           not null references cluster,
+    cid1 integer           not null references cluster,
+    name varchar(32)       not null,
+    password varchar(64)   not null,
+    email varchar(64)      not null,
+    date_joined timestamp  not null default now(),
+    constraint name_unique unique(name),
+    constraint email_unique unique(email)
     ) engine=InnoDB;  
 --we use InnoDB so we can have transactions
 --InnoDB uses fsync a lot, so reiserfs will likely be faster than ext3
