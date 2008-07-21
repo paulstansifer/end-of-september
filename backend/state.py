@@ -59,7 +59,7 @@ class State:
 
         try:
           self.active_cid = web.query('select active_cid from globals')[0].active_cid;
-        except AttributeError:
+        except IndexError:
           self.active_cid = None #presumably, the first thing we'll do is clear the DB
 
         

@@ -8,11 +8,13 @@ def db_init():
   s.clear()
   return s
 
+inject = "a'; drop table user; * $ # ! @ ^ & ( ) ` ~ , . --"
+
 class TestState(unittest.TestCase):
   def setUp(self):
     self.s = db_init()
     #TODO: '%' currently causes crashes!  
-    self.inject = "a'; drop table user; * $ # ! @ ^ & ( ) ` ~ , . --"
+
 
   def run_with_dbg(self, result=None): #rename to _run_ to get live debugging
     if result == None: result = defaultTestCase()
@@ -58,7 +60,7 @@ class TestState(unittest.TestCase):
     self.assertEqual(self.s.get_uid_from_name("HankVenture"), hank_id)
     self.assertRaises(Exception, self.s.get_uid_from_name, "Dean Venture")
     self.assertRaises(Exception, self.s.get_uid_from_name, "*")
-    self.assertRaises(Exception, self.s.get_uid_from_name, self.inject)    
+    self.assertRaises(Exception, self.s.get_uid_from_name, inject)    
 
 
 def seed_state(state):
@@ -76,9 +78,9 @@ def seed_state(state):
   return ids
   
 
-class TestStateSeeded(TestState):
+class TestStateSeeded(unittest.TestCase):
   def setUp(self):
-    TestState.setUp(self)
+    self.s = db_init()
     self.ids = seed_state(self.s)
 
   def test_user_auth(self):
@@ -91,7 +93,7 @@ class TestStateSeeded(TestState):
     self.assertEqual(self.s.check_ticket(self.ids['wash'], mal_tik), False)
 
     self.assertEqual(self.s.check_ticket(self.ids['mal'], "FAKETICKET"), False)
-    self.assertEqual(self.s.check_ticket(self.ids['mal'], self.inject), False)
+    self.assertEqual(self.s.check_ticket(self.ids['mal'], inject), False)
 
   def test_vote_analysis(self):
     self.assertEqual(self.s.voted_for(self.ids['mal'], self.ids['violence']), True)
