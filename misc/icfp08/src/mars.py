@@ -32,7 +32,6 @@ class Mars:
         return
     self.boulders.append(Boulder(c, r))
 
-
   def rec_martian(self, c, heading, speed):
     for m in self.martians:
       if m.could_be(c, heading, speed):
@@ -51,7 +50,6 @@ class Mars:
     for m in self.martians:
       if dist(rover_c, m.c) < 100:
         mdx, mdy = m.repel(rover_c)
-        #print "md ", mdx, mdy
         dx += mdx; dy += mdy;
 
     dist_home = dist(rover_c, (0,0))
@@ -67,9 +65,9 @@ class Mars:
     #TODO: add a 'stress level' to increase the penalty for turining when danger is near
     
     occl = [-cos(radians(
-                   abs(homeward - d)
+                   ang_diff(homeward, d)
                    ))  #adjust to face home: [-1.0 .. 1.0]
-            + abs(rover_dir - d) / 720 # penalty of up to 0.5 for turning around
+            + ang_diff(rover_dir, d) / 720 # penalty of up to 0.5 for turning around
                  for d in xrange(0,360)]
     
 
@@ -114,21 +112,20 @@ class Boulder:
     if self.r < distance: #usually true!
       radius = degrees(asin((self.r + .5) / (distance + .5)))
     else:
-      radius = 185
+      radius = 160
 
-    if self.r + 0.75 < distance: #usually true!
-      radius_p = degrees(asin((self.r + .5 + .75) / (distance + .5)))
+    if self.r + 1.0 < distance: #usually true!
+      radius_p = degrees(asin((self.r + .5 + 1.0) / (distance + .5)))
     else:
-      radius_p = 185
+      radius_p = 180
     if radius > 15:
       print "c!", focus, radius, rover.max_speed/distance
 
 
-    return lambda d : (12/distance * 
+    return lambda d : (15/distance * 
              (1 if ang_diff(d, focus) <= radius         #umbra
-              else (0.5 if ang_diff(d, focus) <= radius_p #penumbra
+              else (0.6 if ang_diff(d, focus) <= radius_p #penumbra
               else 0)))
-#0/((ang_diff(d, focus)-radius)/1.3 + 1))) #falls off fast
 
 class Martian:
   def __init__(self, c, heading, speed):

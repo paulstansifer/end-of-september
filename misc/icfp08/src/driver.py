@@ -138,10 +138,3 @@ while 1:
     if run >= 5:
       s.close()
       sys.exit()
-  #else:
-  #  print data
-    
-  
-#  conn.send('a;')
-
-#conn.close()

@@ -1,6 +1,14 @@
-The rover uses occulsion of an imaginary circle surrounding it to
-determine which directions are more favorable.  Things cast darker
-"shadows" onto the circle the closer they are.  Boulders have sharp
-shadows, and Martians have larger, fuzzier ones.  It factors in the
-direction of the home base, and the diffculty of turning sharply, and
-heads toward the least-obstructed direction.
+We didn't have too much time to work on our rover, so we had to use a
+simple hueristic approach.  We rasterized an imaginary circle
+surrounding the rover repesenting how favorable each direction is for
+travel.  Boulders and craters cast crisp "shadows" onto this circle of
+areas to avoid (darker as they get closer), and Martians cast fuzzier
+ones, whose shap varies depending on which direction they are
+pointing.  The rover factors in a bias to move toward the center and a
+bias against turning around needlessly, and moves toward its best
+direction.  This way, we got a very effective path-finding system in
+very few (around 300) lines of code.
+
+Had we had some more time, we would have liked to fit our rover with a
+wall-following system so it could navigate mazes for relavtively
+little extra effort.
