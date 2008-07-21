@@ -69,7 +69,7 @@ def render(post, render, vote=None, username=None, term=None, extras={}):
       extras_rendered += "<b>" + k + "</b>: " + str(v) + "<br/>"
 
     if vote == True:
-      vote_result_rendered = render.vote_result(post.id)
+      vote_result_rendered = render.vote_result(post.id, "TODO", "TODO")
     else:
       vote_result_rendered = None
 
