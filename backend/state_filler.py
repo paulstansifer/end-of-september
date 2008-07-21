@@ -11,6 +11,7 @@ import web
 
 import state, search
 import online
+from log import *
 
 paragraphs = ['''Lorem ipsum dolor sit amet, consectetuer adipiscing elit.  Curabitur scelerisque lectus. [/Fusce tempor/], mi a adipiscing tempus, lacus augue luctus sapien, ut commodo arcu tortor cursus leo. Nunc tortor ligula, accumsan non, volutpat in, tristique vel, est. Maecenas aliquam tortor ac purus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.''',
               '''Maecenas ultrices risus ac nunc. Maecenas nonummy. Nunc elit libero, porta et, commodo ut, mollis eu, diam. Maecenas purus tellus, dapibus sed, egestas in, laoreet et, diam. Vestibulum quis leo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Duis tincidunt.''']
@@ -69,9 +70,6 @@ def populate_state(state):
     print "Clearing state . . ."
     state.clear()
 
-    added_file_uids = set()
-    added_file_pids = set()
-
     uid_file_to_state = {}
     pid_file_to_state = {}
 
@@ -82,23 +80,23 @@ def populate_state(state):
         topic = randint(0,3)
         file_pid, file_uid = line_parser.match(line).groups()
 
-        if not file_uid in added_file_uids:
+        if not file_uid in uid_file_to_state:
             state_uid = state.create_user('_'.join(['user', file_uid]),
                                           'password',
                                           ''.join([file_uid, '@gmail.com']))
             uid_file_to_state[file_uid] = state_uid
-            added_file_uids.add(file_uid)
 
-        if not file_pid in added_file_pids:
- 
+
+
+        if not file_pid in pid_file_to_state:
             body = ''.join([
                             ' '.join([sample(para[topic], 1)[0]
                                       for k in xrange(randint(1,5))])
                             + '\n\n  '
                             for j in xrange(randint(1,5))])
-            state_pid = state.create_post(1, sample(claims, 1)[0], body)
+            state_pid = state.create_post(uid_file_to_state[file_uid],
+                                          sample(claims, 1)[0], body)
             pid_file_to_state[file_pid] = state_pid
-            added_file_pids.add(file_pid)
             
             #state.add_to_history(file_uid, file_pid)  #put this back after we reduce the total number of votes
             state.vote(uid_file_to_state[file_uid],
