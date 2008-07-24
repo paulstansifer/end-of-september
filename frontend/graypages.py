@@ -126,17 +126,28 @@ class default(cookie_session):
     uid = self.uid_from_cookie()
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
 
-def post_wrap(post, username, uid, term=None, extras={}):
+#render the div a post sits in
+def post_div(pid, uid=None, username_already=None, term=None, extras={}, expose=False):
+  post = state.get_post(pid)
+
+  if uid != None and state.voted_for(uid, pid):
+    vote_result = render.vote_result(pid, post.uid, state.get_user(post.uid).name)
+  else:
+    vote_result = None
+
+  if uid != None and username_already == None:
+    username = state.get_user(uid).name
+  else:
+    username = username_already #save a DB call, if we can
+
   info = {'score': post.broad_support, 'id': post.id }
   info.update(extras)
   return ('''<div class="post" id="post%d">
-    <a href="javascript:dismiss(%d)" class="dismisser">
-    <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
+               <a href="javascript:dismiss(%d)" class="dismisser">
+               <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
           % (post.id, post.id)
-      + render_post.render(post, render,
-                           vote=state.voted_for(uid, post.id),
-                           username=username, term=term, extras=info)
-      + "</div>")
+          + render_post.render(post, vote_result, term, username, info, expose=expose)
+
 
 class frontpage(cookie_session, normal_style):
   def GET(self, username):
@@ -155,7 +166,7 @@ class frontpage(cookie_session, normal_style):
     posts = online.gather(user, state)[0:6]
     for post in posts:
       state.add_to_history(uid, post.id)
-      content += post_wrap(post, user.name, uid)
+      content += post_div(post, uid, user.name)
 
     if content == '': #why can't we use for-else here?
       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
@@ -167,18 +178,13 @@ class article(cookie_session, normal_style):
   def GET(self, pid):
     pid = int(pid)
     post = state.get_post(pid, content=True)
+
     try:
       uid = self.uid_from_cookie(None)
-      username = state.get_user(uid).name
-      real = uid < 10
-      content = render_post.render(post, render,
-                                   state.voted_for(uid, pid),
-                                   username)
     except CantAuth:
-      username = None
-      real = False
-      content = render_post.render(post, render)
+      uid = None
 
+    content = post_div(post, uid, expose=True)
     self.package('', #TODO: make a special sidebar
                  '<div class="post" id="post%d">' + content + '</div>',
                  real, username, js_files=['citizen.js'])
@@ -214,7 +220,8 @@ class search_results(cookie_session, normal_style):
     content = ""
     for result in results:
       state.add_to_history(uid, result.post.id)
-      content += post_wrap(result.post, username, uid, result.term, {"score": result.score})
+      content += post_div(result.post, uid, username, result.term, 
+                              extras={"score": result.score})
       
     sidebar = render.search_sidebar(i.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
