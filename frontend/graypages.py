@@ -127,11 +127,9 @@ class default(cookie_session):
     web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
 
 #render the div a post sits in
-def post_div(pid, uid=None, username_already=None, term=None, extras={}, expose=False):
-  post = state.get_post(pid)
-
-  if uid != None and state.voted_for(uid, pid):
-    vote_result = render.vote_result(pid, post.uid, state.get_user(post.uid).name)
+def post_div(post, uid=None, username_already=None, term=None, extras={}, expose=False):
+  if uid != None and state.voted_for(uid, post.id):
+    vote_result = render.vote_result(post.id, post.uid, state.get_user(post.uid).name)
   else:
     vote_result = None
 
@@ -147,6 +145,7 @@ def post_div(pid, uid=None, username_already=None, term=None, extras={}, expose=
                <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
           % (post.id, post.id)
           + render_post.render(post, vote_result, term, username, info, expose=expose)
+          )
 
 
 class frontpage(cookie_session, normal_style):

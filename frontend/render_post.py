@@ -1,9 +1,5 @@
 from state import State
 from datetime import timedelta, datetime
-import web
-
-render = web.template.render('templates/')
-
 
 def render_timedelta(td):
   seconds = td.seconds % 60
@@ -47,7 +43,8 @@ def render_timedelta(td):
   
   return ret_val
     
-def render(post, vote_result=None, username=None, term=None, extras={}, expose=False):
+
+def render(post, render, vote=None, username=None, term=None, extras={}):
     claim = post.claim
     age = datetime.now() - post.date_posted
     callout = 'I think you\'re pretty sexy, but I hate it when you talk.'
@@ -71,11 +68,12 @@ def render(post, vote_result=None, username=None, term=None, extras={}, expose=F
     for (k, v) in extras.iteritems():
       extras_rendered += "<b>" + k + "</b>: " + str(v) + "<br/>"
 
+    if vote == True:
+      vote_result_rendered = render.vote_result(post.id, "TODO", "TODO")
+    else:
+      vote_result_rendered = None
 
-    return render.post(pid, 
-                       'none' if expose else 'inline',
-                       'inline' if expose else 'none',
-                       post.claim, callout, content, 
-                       render_timedelta(age),
+    return render.post(pid, 'inline', 'none', post.claim, callout,
+                       content, render_timedelta(age),
                        extras_rendered, notes_rendered,
-                       vote_result, username, term)
+                       vote_result_rendered, username, term)
