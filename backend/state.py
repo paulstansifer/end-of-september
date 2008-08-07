@@ -148,7 +148,7 @@ class State:
         
         if content == False:
             return post[0]
-        
+
         lazies = {
             'raw' : (lambda : web.query('select raw from post_content where pid=%d' % pid)[0].raw),
             'safe_html' : (lambda : web.query('select safe_html from post_content where pid=%d' % pid)[0].safe_html),
