@@ -1,21 +1,48 @@
+$(document).ready(function() {
+    $(".j_content").not(".expose").hide("normal");
+    $(".j_summary").not(".expose").show();
+
+    //$(".dismisser").show();
+    //on consideration, what good does this do?  --PS
+});
+
+
 function dismiss(id) {
-  var post = document.getElementById("post"+id);
-  post.parentNode.removeChild(post);
+  //var post = document.getElementById("post"+id);
+  //post.parentNode.removeChild(post);
+  $("#post"+id).hide("slow");
   //TODO notify server, so it won't be displayed on future page loads
 }
 
+var slam_quick = 100;
+
 function expose(id) { //TODO: support earlier browsers
+  $("#summary"+id).slideUp(slam_quick);
+  $("#sidebar_summary"+id).slideUp(slam_quick, function() {
+      $("#contents"+id).slideDown("slow");
+      $("#sidebar_contents"+id).slideDown("slow");
+    });
+  /*
   document.getElementById('summary'+id).style.display = 'none';
   document.getElementById('contents'+id).style.display = 'block';
   document.getElementById('sidebar_summary'+id).style.display = 'none';
-  document.getElementById('sidebar_contents'+id).style.display = 'block';
+  document.getElementById('sidebar_contents'+id).style.display = 'block';*/
 }
 
 function shrink(id) { //TODO: support earlier browsers
+  $("#sidebar_contents"+id).slideUp("slow");
+  $("#contents"+id).slideUp("slow", function() {
+      $("#summary"+id).slideDown(slam_quick);
+      $("#sidebar_summary"+id).slideDown(slam_quick);
+    });
+
+  /*
   document.getElementById('summary'+id).style.display = 'block';
   document.getElementById('contents'+id).style.display = 'none';
   document.getElementById('sidebar_summary'+id).style.display = 'block';
   document.getElementById('sidebar_contents'+id).style.display = 'none';
+  */
+
 }
 
 function ajax(url) {

@@ -1,11 +1,27 @@
-$def with (pid, s_s, s_c, claim, summary_rendered, contents_rendered, age_rendered, extras_rendered, notes_rendered, vote_result_rendered, username, term)
+$def with (pid, extra_class, claim, summary_rendered, contents_rendered, age_rendered, extras_rendered, notes_rendered, vote_result_rendered, username, term)
 
 <h3>Claim: $claim</h3>
 <div style='clear: right'>
-  <div id='summary$pid' class='postbody' style='display:$s_s'>
+  <div class='sidebar'>
+    <div id='sidebar_summary$pid' class='j_summary $extra_class' >
+      (<a href='javascript:expose($pid)' class='ajaxy'>expand</a> | <a href='/view/$pid'>page</a>)
+    </div>
+    <div id='sidebar_contents$pid' class='j_content $extra_class' >
+      <div class='sidebarsection'>
+        (<a href='javascript:shrink($pid)' class='ajaxy'>contract</a> | <a href='/view/$pid'>page</a>) <br />
+        $:age_rendered ago <br />
+        $:extras_rendered
+      </div>
+      <div>
+        $:notes_rendered
+      </div>
+    </div> <!-- end of sidebar_contents -->
+
+  </div> <!-- end of sidebar -->
+  <div id='summary$pid' class='j_summary $extra_class postbody'>
     &#8220; $summary_rendered &#8221;
   </div>
-  <div id='contents$pid' class='postbody' style='display:$s_c'>
+  <div id='contents$pid' class='j_content $extra_class postbody'>
     $contents_rendered
     <!-- voting, etc.-->
     $if username != None:
@@ -27,21 +43,5 @@ $def with (pid, s_s, s_c, claim, summary_rendered, contents_rendered, age_render
             </form>
         </div> <!-- end of tools -->
   </div> 
-  <div class='sidebar'>
-    <div id='sidebar_summary$pid' style='display:$s_s;'>
-      (<a href='javascript:expose($pid)' class='ajaxy'>expand</a> | <a href='/view/$pid'>page</a>)
-    </div>
-    <div id='sidebar_contents$pid' style='display:$s_c'>
-      <div class='sidebarsection'>
-        (<a href='javascript:shrink($pid)' class='ajaxy'>contract</a> | <a href='/view/$pid'>page</a>) <br />
-        $:age_rendered ago <br />
-        $:extras_rendered
-      </div>
-      <div>
-        $:notes_rendered
-      </div>
-    </div> <!-- end of sidebar_contents -->
-
-  </div> <!-- end of sidebar -->
   <div style='clear: both;' > </div>
 </div>

@@ -56,7 +56,9 @@ class normal_style:
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
 <head><title>%s</title>
 <link rel="stylesheet" type="text/css" href="/static/yb.css" />
-<link rel="shortcut icon" href="/static/read.png" />''' % title
+<link rel="shortcut icon" href="/static/read.png" />
+<script src="/static/jquery-1.2.6.min.js" type="text/javascript"></script>
+''' % title
     for js in js_files:
       print '<script src="/static/%s" type="text/javascript"></script>' % js
 
@@ -145,7 +147,9 @@ def post_div(post, uid=None, username_already=None, term=None, extras={}, expose
     <a href="javascript:dismiss(%d)" class="dismisser">
     <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
           % (pid, pid)
-          + render_post.show(post, vote_result, term, username, info, expose=expose)
+          + render_post.show(post, vote_result=vote_result,
+                             username=username, term=term,
+                             extras=info, expose=expose)
           + '</div>'
           )
 
@@ -162,16 +166,22 @@ class frontpage(cookie_session, normal_style):
     user_cluster = user.cid
     content = ''
 
-    #recommendations = engine.recommend_for_cluster(state, user_cluster)
+    #if preexisting list available:
+    #  grab it
+    #else:
+    #  posts = online.gather(user, state)[0:6]
     posts = online.gather(user, state)[0:6]
     for post in posts:
       state.add_to_history(uid, post.id)
       content += post_div(post, uid, user.name)
 
-    if content == '': #why can't we use for-else here?
+    if len(posts) == 0: #why can't we use for-else here?
       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
+    #else:
+    #  prepend the "you've seen these; reload?" message
 
     sidebar = render.ms_sidebar([state.get_post(wtr) for wtr in state.recent_votes(uid, 4)])
+
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
 class article(cookie_session, normal_style):
@@ -181,12 +191,12 @@ class article(cookie_session, normal_style):
     try:
       uid = self.uid_from_cookie(None)
       username = state.get_user(uid).name
-      content = post_div(post, uid, username, expose=True)
+      content = post_div(post, uid, expose=True)
       real = uid > 10
     except CantAuth:
       username = None
       real = False
-      content = post_div(post, expose=True)
+      content = post_div(post, username, expose=True)
 
     self.package('', #TODO: make a special sidebar
                  content,
