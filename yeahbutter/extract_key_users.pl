@@ -14,6 +14,7 @@ $votes_min = shift; #16
 $votes_max = shift; #48
 $shuffling = 0;
 $weighting = 0;
+$chunk_size = 1000;
 
 open(LOG, ">", "ex.extraction_log");
 print LOG "key users: $num_key_users\n";
@@ -44,6 +45,7 @@ my %votes_hash;
 my @votes;
 my @articles = keys(%articles_hash);
 my $num_users = @users;
+my $num_articles = @articles;
 my %key_articles_hash = ();
 my %key_users_hash = ();
 my $next_key_article_id = 1;
@@ -87,6 +89,7 @@ if(not $shuffling) {
 open(KEY_USERS, ">", "ex.key_users") or die $!;
 my $line = 1;
 print STDERR "emitting key users\n";
+print KEY_USERS "$num_key_users $num_articles\n";
 foreach (@key_users) {
 
   print KEY_USERS $line++, " ";
@@ -119,10 +122,11 @@ my $user_chunk = 0;
 my $user = 0;
 open(USER_CHUNK, ">", "ex.users_$user_chunk");
 foreach (@users) {
-  if($user++ % 500 == 0) {
+  if($user++ % $chunk_size == 0) {
     close(USER_CHUNK);
     print STDERR "emitting user chunk $user_chunk\n";
     open(USER_CHUNK, ">", "ex.users_$user_chunk") or die $!;
+    print "$chunk_size $num_articles\n";
     $user_chunk++; 
     $line = 1;
     
