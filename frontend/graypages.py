@@ -18,6 +18,7 @@ urls = ('/favicon.ico', 'favicon',
         '/register', 'register',
         '/', 'default',
         '/users/(.*)/frontpage', 'frontpage',
+        '/users/(.*)/history/(.*)', 'history',
         '/view/(.*)', 'article',
         '/users/(.*)/search', 'search_results',
         '/users/(.*)/compose', 'compose',
@@ -29,7 +30,6 @@ urls = ('/favicon.ico', 'favicon',
 state = state.the
 search = search.the
 
-web.webapi.internalerror = web.debugerror
 
 class login: #TODO: authenticate.  username or email address required, not both
   def GET(self):
@@ -44,11 +44,13 @@ class login: #TODO: authenticate.  username or email address required, not both
     web.setcookie('ticket_for_' + name, ticket, expires=3600*24*90)
     #web.seeother('/users/' + name + '/frontpage')
     print '<a href="/users/' + name + '/frontpage">'+name+'</a>'
-  def PUT(self):
+  def POST(self):
     pass
 
 
 class normal_style:
+  web.webapi.internalerror = web.debugerror
+
   def package(self, sidebar, content, real_user=False, username=None, js_files=[], title='firegray'):
     print '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
@@ -62,14 +64,33 @@ class normal_style:
     for js in js_files:
       print '<script src="/static/%s" type="text/javascript"></script>' % js
 
-    print "</head><body>"
+    print '</head><body>'
     print render.sidebar_top(username)
     print sidebar
     print render.sidebar_bottom(real_user, username)
     print '<div class="stream">'
     print render.navbar(real_user, username)
     print content
-    print "</div></body></html>"
+    print '</div></body></html>'
+
+  
+  def nav_wrap(self, content, username, cur_batch, front, fresh):
+     #history doesn't make sense without a user
+    if username == None: return content
+    navver = (
+       ('<a style="float: left" href="/users/%s/history/%d">older</a>' % (username, cur_batch-1))
+      +(('<a style="float: right" href="/users/%s/history/%d">newer</a>' % (username, cur_batch+1))
+        if (not front) else
+        ('<a style="float: right" href="/users/%s/frontpage?fresh=yes">gather new articles</a>'
+           % (username))))
+    if not fresh:
+      return ('<center><i>'
+              +('You\'ve probably seen these articles already.  You can '
+                if front else
+                'You can also ')
+              + '<a href="/users/%s/frontpage?fresh=yes">gather new articles</a>.</i></center>' % username
+              + content + navver)
+    return content + navver
 
 
 class CantAuth(Exception):
@@ -143,7 +164,7 @@ def post_div(post, uid=None, username_already=None, term=None, extras={}, expose
 
   info = {'score': post.broad_support, 'id': pid }
   info.update(extras)
-  return ('''<div class="post" id="post%d">
+  return ('''<div class="post" id="post%d" style="clear: both">
     <a href="javascript:dismiss(%d)" class="dismisser">
     <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
           % (pid, pid)
@@ -153,14 +174,39 @@ def post_div(post, uid=None, username_already=None, term=None, extras={}, expose
           + '</div>'
           )
 
+class history(cookie_session, normal_style):
+  def GET(self, username, pos):
+    uid = self.uid_from_cookie(username) 
+    user = state.get_user(uid)
+    
+    if(pos == 'latest'):
+      pos = user.current_batch-1 #making it an integer now
+    else:
+      pos = int(pos)
+
+    content = ''
+    posts = state.get_history(uid, pos)
+    for post in posts:
+      content += post_div(post, uid, username)
+
+    if len(posts) == 0:
+      content = '<i>You don\'t seem to have history in the requested range.</i>'
+
+    sidebar = render.ms_sidebar([state.get_post(wtr) for wtr in state.recent_votes(uid, 4)])
+    self.package(sidebar,
+        self.nav_wrap(content, username, pos,
+                      pos == user.current_batch-1, False),
+        uid < 10, username, js_files=['citizen.js'])
+    
+
 class frontpage(cookie_session, normal_style):
   def GET(self, username):
-    web.webapi.internalerror = web.debugerror
-
-    uid = self.uid_from_cookie(username)
-    if uid is None:
-      web.seeother('/login') #FIXME: handle error.
+    i = web.input()
+    if(not i.has_key('fresh')):
+      web.seeother('/users/'+username+'/history/latest')
       return
+    
+    uid = self.uid_from_cookie(username) #TODO: handle error
 
     user = state.get_user(uid)
     user_cluster = user.cid
@@ -171,18 +217,23 @@ class frontpage(cookie_session, normal_style):
     #else:
     #  posts = online.gather(user, state)[0:6]
     posts = online.gather(user, state)[0:6]
+    current_batch = user.current_batch
     for post in posts:
-      state.add_to_history(uid, post.id)
-      content += post_div(post, uid, user.name)
+      state.add_to_history(uid, post.id, current_batch)
+      content += post_div(post, uid, username)
+    state.inc_batch(user) #batches seperate the history into pages
 
-    if len(posts) == 0: #why can't we use for-else here?
+    if len(posts) == 0:
       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
     #else:
     #  prepend the "you've seen these; reload?" message
 
     sidebar = render.ms_sidebar([state.get_post(wtr) for wtr in state.recent_votes(uid, 4)])
 
-    self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
+    self.package(sidebar,
+        self.nav_wrap(content, username, current_batch, True, True),
+        uid < 10, username, js_files=['citizen.js'])
+
 
 class article(cookie_session, normal_style):
   def GET(self, pid):
@@ -204,7 +255,6 @@ class article(cookie_session, normal_style):
 
 class compose(cookie_session, normal_style):
   def GET(self, username): #composition page
-    web.webapi.internalerror = web.debugerror
 
     uid = self.uid_from_cookie(username)    
 
@@ -239,9 +289,8 @@ class search_results(cookie_session, normal_style):
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
     
 class vote(cookie_session):
-  def PUT(self, user, pid_str):
+  def POST(self, user, pid_str):
     pid = int(pid_str)
-    web.webapi.internalerror = web.debugerror
     uid = self.uid_from_cookie(user)
     state.vote(uid, pid)
     author_uid = state.get_post(pid).uid
@@ -249,9 +298,8 @@ class vote(cookie_session):
     print render.vote_result(state.get_post(pid), author_name, author_uid)
 
 class callout(cookie_session):
-  def PUT(self, user, pid_str):
+  def POST(self, user, pid_str):
     pid = int(pid_str)
-    web.webapi.internalerror = web.debugerror
     uid = self.uid_from_cookie(user)
 
     if not state.voted_for(uid, pid):
@@ -262,8 +310,6 @@ class callout(cookie_session):
 
 class recluster:
   def GET(self):
-    web.webapi.internalerror = web.debugerror
-
     cluster_assignments = engine.cluster_by_votes(state)
     state.applyclusters(cluster_assignments)
     print 'Clusters reassigned'
@@ -279,3 +325,4 @@ def not_found():
 
 if __name__ == "__main__":
   web.run(urls, globals(), web.reloader)
+

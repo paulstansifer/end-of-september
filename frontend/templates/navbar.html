@@ -12,7 +12,11 @@ $if real_user:
     $username</a>
 $else:
     <div style='float: right; margin-left: 10px;'>
-    <a href='/users/$username/logout'>sign in</a>
+    $if username == '':
+        <a href='/users/login'>create account/sign in</a>
+    $else:
+        <a href='/users/$username/login'>create permanent account/sign in</a>
+    <img alt='' style='display:hide;' src='/static/munch_bw_16.gif' id='loading'/>
     </div>
     $if username == '':
         welcome, guest | <a href='/users/create'>create an account</a> to participate    

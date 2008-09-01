@@ -28,6 +28,7 @@ create table user (
     password varchar(64)   not null,
     email varchar(64)      not null,
     date_joined timestamp  not null default now(),
+    current_batch integer  not null,
     constraint name_unique unique(name),
     constraint email_unique unique(email)
     ) engine=InnoDB;  
@@ -95,5 +96,6 @@ create table history (
     uid integer references user,
     pid integer references post,
     date_viewed timestamp default now(),
+    batch integer,
     primary key(uid, pid)
     ) engine=InnoDB;

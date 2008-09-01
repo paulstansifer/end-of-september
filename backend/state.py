@@ -91,7 +91,8 @@ class State:
       _validate_email_address(email)
       fakecid = random.randint(0,4) #TODO temporary hack
       new_user = int(web.insert('user', name=name, password=pwd, 
-                                email=email, cid0=fakecid, cid1=fakecid))
+                                email=email, cid0=fakecid, cid1=fakecid,
+                                current_batch=1))
       return new_user
 
     def check_ticket(self, uid, ticket):
@@ -159,8 +160,20 @@ class State:
         
         return web.storage(lazies)
 
-    def add_to_history(self, uid, pid):
-        web.insert('history', uid=uid, pid=pid)
+    def inc_batch(self, user):
+        web.query('update user set current_batch=%d where id=%d'
+                  % (user.current_batch+1, user.id))
+
+    def add_to_history(self, uid, pid, batch):
+        web.insert('history', uid=uid, pid=pid, batch=batch)
+
+    def get_history(self, uid, batch):
+        pids = [s.pid for s in
+                web.query('select pid from history where uid=%d and batch=%d'
+                         % (uid, batch))]
+
+        return [self.get_post(pid, True) for pid in pids]
+        
 
     #TODO: after get_post is fixed, optimize, by going back to grabbing them.
     def get_random_pids(self, count):
@@ -275,7 +288,7 @@ class State:
                 ''' % (
                        web.sqlquote(term),
                        self.active_cid,
-                       ', '.join([str(c) for c in clusters]))
+                       ', '.join(['%d'%c for c in clusters]))
                       )]
 
     
