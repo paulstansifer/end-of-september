@@ -3,8 +3,8 @@ import unittest
 import web
 
 def db_init():
-  s = state.State()
-  s.connect('yb_test')
+  s = state.State(database='yb_test')
+  s.connect()
   s.clear()
   return s
 
@@ -13,8 +13,10 @@ inject = "a'; drop table user; * $ # ! @ ^ & ( ) ` ~ , . --"
 class TestState(unittest.TestCase):
   def setUp(self):
     self.s = db_init()
-    #TODO: '%' currently causes crashes!  
-
+    self.s.clear()
+    #TODO: '%' currently causes crashes!
+  def tearDown(self):
+    self.s.close()
 
   def run_with_dbg(self, result=None): #rename to _run_ to get live debugging
     if result == None: result = defaultTestCase()
@@ -70,8 +72,8 @@ def seed_state(state):
   ids['wash'] = state.create_user("hobartwashburne", "sudden_inevitable", "wash@serenity.firefly.org")
 
   ids['violence'] = state.create_post(ids['mal'], "Shooting is the solution to this problem.", "---")
-  state.vote(ids['jayne'], ids['violence'], "violence")
   ids['nonviolence'] = state.create_post(ids['wash'], "Can I make a suggestion that doesn't involve violence?", "---")
+  state.vote(ids['jayne'], ids['violence'], "violence")
   state.vote(ids['mal'], ids['nonviolence'])
 
   ids['pants'] = state.create_post(ids['mal'], "Mal needs no pants!", "---")
@@ -82,6 +84,9 @@ class TestStateSeeded(unittest.TestCase):
   def setUp(self):
     self.s = db_init()
     self.ids = seed_state(self.s)
+
+  def tearDown(self):
+    self.s.close()
 
   def test_user_auth(self):
     mal_tik = self.s.make_ticket(self.ids['mal'])
@@ -112,6 +117,8 @@ class TestStateSeeded(unittest.TestCase):
 
     self.assertEqual(vbu_ids('wash'),
                      set([self.ids['nonviolence']]))
+  
+    #history tested at the integration level
 
     
 if __name__ == "__main__":

@@ -17,19 +17,19 @@ urls = ('/favicon.ico', 'favicon',
         '/login', 'login',
         '/register', 'register',
         '/', 'default',
-        '/users/(.*)/frontpage', 'frontpage',
-        '/users/(.*)/history/(.*)', 'history',
-        '/view/(.*)', 'article',
-        '/users/(.*)/search', 'search_results',
-        '/users/(.*)/compose', 'compose',
-        '/users/(.*)/vote/wtr(.*)', 'vote',
-        '/users/(.*)/vote/callout', 'callout',
+        '/users/(.+)/frontpage', 'frontpage',
+        '/users/(.+)/history/(.+)', 'history',
+        '/articles/(.+)/wtr', 'vote',
+        '/articles/(.+)/callout', 'callout',
+        '/articles/(.+)', 'article',
+        '/users/(.+)/search', 'search_results',
+        '/users/(.+)/compose', 'compose',
         '/admin/recluster', 'recluster')
 
-# get the system state clearinghouse
-state = state.the
-search = search.the
-
+#_texas_ is assigned (in _serve()_)to the state that we're concerned with.  In honor
+#of Christine, 'casue I can't think of a better name
+texas = state.the
+search = texas.search
 
 class login: #TODO: authenticate.  username or email address required, not both
   def GET(self):
@@ -38,15 +38,23 @@ class login: #TODO: authenticate.  username or email address required, not both
       print "give a name!"
       return
     name = inp.name
-    uid = state.get_uid_from_name(name)
+    uid = texas.get_uid_from_name(name)
     web.setcookie('name', name, expires=3600*24*90)
-    ticket = state.make_ticket(uid)
+    ticket = texas.make_ticket(uid)
     web.setcookie('ticket_for_' + name, ticket, expires=3600*24*90)
     #web.seeother('/users/' + name + '/frontpage')
     print '<a href="/users/' + name + '/frontpage">'+name+'</a>'
-  def POST(self):
-    pass
+  def POST(self):  #TODO: userify
+    inp = web.input()
+    try:
+      texas.create_user(inp.name, inp.pwd, inp.email)
+    except state.DataError, e:
+      print 'Unable to create user:', e
+      return
+    print 'Welcome new user ' + inp.name
 
+#TODO: should _cookie_session_ and _normal_style_ be classes?  I'm
+#starting to think it doesn't really make sense.
 
 class normal_style:
   web.webapi.internalerror = web.debugerror
@@ -97,6 +105,9 @@ class CantAuth(Exception):
   def __init__(self, msg):
     self.msg = msg
 
+  def __call__(self):  #executable exceptions become pages?
+    print '<html><head></head><body>' + msg + '</body></html>'
+
 class IllegalAction(Exception):
   def __init__(self, msg):
     self.msg = msg
@@ -112,21 +123,22 @@ class cookie_session:
   #Require a proper login with a password before doing anything
   #serious/unreversable
   def uid_from_cookie(self, name_from_url=None):
-    cookies = web.cookies()      
+    cookies = web.cookies()
 
     try:
       if name_from_url != None:
         username = name_from_url  
       else:
         username = cookies['name']
-      uid = state.get_uid_from_name(username)
-      if uid == None: #username not recognized (rare -- mucking with cookies?)
+      try:
+        uid = texas.get_uid_from_name(username)
+      except: #username not recognized (rare -- mucking with cookies?)
         raise CantAuth("User name '" + username+"' not recognized.")
       ticket = cookies['ticket_for_' + username]
     except KeyError: #name missing (cookies cleared?) or ticket missing (rare)
       raise CantAuth("Not logged in.")
-    if state.check_ticket(uid, ticket):
-      web.setcookie('name', username, expires=3600*24*90)
+    if texas.check_ticket(uid, ticket):
+      web.setcookie('name', username, expires=3600*24*90) #sets identity
       #after three months of inactivity, you get logged out
       return uid
     else: #ticket invalid (rare -- mucking with cookies?)
@@ -147,18 +159,18 @@ class cookie_session:
 class default(cookie_session):
   def GET(self):
     uid = self.uid_from_cookie()
-    web.seeother('/users/' + state.get_user(uid).name + "/frontpage")
+    web.seeother('/users/' + texas.get_user(uid).name + "/frontpage")
 
 #render the div a post sits in
 def post_div(post, uid=None, username_already=None, term=None, extras={}, expose=False):
   pid = post.id
-  if uid != None and state.voted_for(uid, pid):
-    vote_result = render.vote_result(pid, post.uid, state.get_user(post.uid).name)
+  if uid != None and texas.voted_for(uid, pid):
+    vote_result = render.vote_result(pid, post.uid, texas.get_user(post.uid).name)
   else:
     vote_result = None
 
   if uid != None and username_already == None:
-    username = state.get_user(uid).name
+    username = texas.get_user(uid).name
   else:
     username = username_already #save a DB call, if we can
 
@@ -177,7 +189,7 @@ def post_div(post, uid=None, username_already=None, term=None, extras={}, expose
 class history(cookie_session, normal_style):
   def GET(self, username, pos):
     uid = self.uid_from_cookie(username) 
-    user = state.get_user(uid)
+    user = texas.get_user(uid)
     
     if(pos == 'latest'):
       pos = user.current_batch-1 #making it an integer now
@@ -185,20 +197,21 @@ class history(cookie_session, normal_style):
       pos = int(pos)
 
     content = ''
-    posts = state.get_history(uid, pos)
+    posts = texas.get_history(uid, pos)
     for post in posts:
       content += post_div(post, uid, username)
 
     if len(posts) == 0:
       content = '<i>You don\'t seem to have history in the requested range.</i>'
 
-    sidebar = render.ms_sidebar([state.get_post(wtr) for wtr in state.recent_votes(uid, 4)])
+    sidebar = render.ms_sidebar([texas.get_post(wtr) for wtr in texas.recent_votes(uid, 4)])
     self.package(sidebar,
         self.nav_wrap(content, username, pos,
                       pos == user.current_batch-1, False),
         uid < 10, username, js_files=['citizen.js'])
     
 
+#/users/<username>/frontpage
 class frontpage(cookie_session, normal_style):
   def GET(self, username):
     i = web.input()
@@ -208,27 +221,28 @@ class frontpage(cookie_session, normal_style):
     
     uid = self.uid_from_cookie(username) #TODO: handle error
 
-    user = state.get_user(uid)
+    user = texas.get_user(uid)
     user_cluster = user.cid
     content = ''
 
-    #if preexisting list available:
-    #  grab it
-    #else:
-    #  posts = online.gather(user, state)[0:6]
-    posts = online.gather(user, state)[0:6]
+    if(i.has_key('articles')):
+      article_count = int(i['articles'])
+      if article_count < 1 or article_count > 25:
+        article_count = 6
+    else:
+      article_count = 6
+    
+    posts = online.gather(user, texas)[0:article_count]
     current_batch = user.current_batch
     for post in posts:
-      state.add_to_history(uid, post.id, current_batch)
+      texas.add_to_history(uid, post.id, current_batch)
       content += post_div(post, uid, username)
-    state.inc_batch(user) #batches seperate the history into pages
+    texas.inc_batch(user) #batches seperate the history into pages
 
     if len(posts) == 0:
       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
-    #else:
-    #  prepend the "you've seen these; reload?" message
 
-    sidebar = render.ms_sidebar([state.get_post(wtr) for wtr in state.recent_votes(uid, 4)])
+    sidebar = render.ms_sidebar([texas.get_post(wtr) for wtr in texas.recent_votes(uid, 4)])
 
     self.package(sidebar,
         self.nav_wrap(content, username, current_batch, True, True),
@@ -238,10 +252,10 @@ class frontpage(cookie_session, normal_style):
 class article(cookie_session, normal_style):
   def GET(self, pid):
     pid = int(pid)
-    post = state.get_post(pid, content=True)
+    post = texas.get_post(pid, content=True)
     try:
       uid = self.uid_from_cookie(None)
-      username = state.get_user(uid).name
+      username = texas.get_user(uid).name
       content = post_div(post, uid, expose=True)
       real = uid > 10
     except CantAuth:
@@ -264,8 +278,8 @@ class compose(cookie_session, normal_style):
     i = web.input()
     uid = self.uid_from_cookie(username)
     #TODO: we need to deal with pids in posts.  And record the author.
-    pid = state.create_post(uid, i.claim, i.posttext)
-    web.seeother('/view/' + str(pid))
+    pid = texas.create_post(uid, i.claim, i.posttext)
+    web.seeother('/articles/' + str(pid))
 
 class search_results(cookie_session, normal_style):
   def GET(self, username):
@@ -276,53 +290,63 @@ class search_results(cookie_session, normal_style):
     uid = self.uid_from_cookie(username) #TODO error handling
 
     if i.local:
-      results = search.local_search(state.get_user(uid).cid, terms, i.recent)
+      results = search.local_search(texas.get_user(uid).cid, terms, i.recent)
     else:
       results = search.global_search(terms, i.recent)
 
     content = ""
     for result in results:
-      state.add_to_history(uid, result.post.id)
+      texas.add_to_history(uid, result.post.id)
       content += post_div(result.post, uid, username, result.term, {"score": result.score})
       
     sidebar = render.search_sidebar(i.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
     
 class vote(cookie_session):
-  def POST(self, user, pid_str):
+  def POST(self, pid_str):
     pid = int(pid_str)
-    uid = self.uid_from_cookie(user)
-    state.vote(uid, pid)
-    author_uid = state.get_post(pid).uid
-    author_name = state.get_user(author_uid).name
-    print render.vote_result(state.get_post(pid), author_name, author_uid)
+    uid = self.uid_from_cookie()
+    texas.vote(uid, pid)
+    author_uid = texas.get_post(pid).uid
+    author_name = texas.get_user(author_uid).name
+    i = web.input()
+    if i.has_key('just_result') and i['just_result'] == 'yes':
+      print render.vote_result(texas.get_post(pid), author_name, author_uid)
+    else:
+      #TODO: make it so that, without JS, this is actually used
+      print "ok"
+      #web.seeother('/articles/' + str(pid)) #no JS?  redirect to view the whole article
 
 class callout(cookie_session):
-  def POST(self, user, pid_str):
+  def POST(self,  pid_str):
     pid = int(pid_str)
-    uid = self.uid_from_cookie(user)
+    uid = self.uid_from_cookie()
 
-    if not state.voted_for(uid, pid):
-      raise IllegalAction("You may only make a callout on an article that you've voted for")
+    if not texas.voted_for(uid, pid):
+      raise IllegalAction("You may only make a callout on an article that you've voted for.")
 
     #TODO: figure out somewhere to put the callout logic
     
 
 class recluster:
   def GET(self):
-    cluster_assignments = engine.cluster_by_votes(state)
-    state.applyclusters(cluster_assignments)
+    cluster_assignments = engine.cluster_by_votes(texas)
+    texas.applyclusters(cluster_assignments)
     print 'Clusters reassigned'
     #TODO throw in some diagnostic
-    #for uid in state.users: print state.users[uid]
+    #for uid in texas.users: print texas.users[uid]
 
 class favicon:
   def GET(self):
     print open('static/fg.ico', 'r').read()
     
 def not_found():
-  print render.not_found() #TODO: reduce irony by creating template
+  print render.not_found()
 
-if __name__ == "__main__":
+
+def serve():
   web.run(urls, globals(), web.reloader)
+  
+if __name__ == "__main__":
+  serve()
 

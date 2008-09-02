@@ -16,22 +16,29 @@ import random # Needed for random cluster assignment hack.  Should disappear
 
 import search
 
+class DataError(Exception):
+  def __init__(self, value):
+    self.value = value
+  def __str__(self):
+    return repr(self.value)
+
+
 _name_validator = re.compile(r'^[\w.-]{1,32}$')
 def _validate_name(name):
   if not _name_validator.match(name):
-    raise Exception("Invalid username: '%s'.  Usernames must be no more than 32 characters, and consist solely of alphanumerics, underscore, period, and dash" % name)
+    raise DataError("Invalid username: '%s'.  Usernames must be no more than 32 characters, and consist solely of alphanumerics, underscore, period, and dash" % name)
 
 _email_validator = re.compile(r'[^@]+@[a-z-]+([.][a-z-]+)+', re.I)
 def _validate_email_address(email):
-  if len(email) > 64: raise Exception("Invalid email address: '%s'.  We can only store 64 characters of email address.")
+  if len(email) > 64: raise DataError("Invalid email address: '%s'.  We can only store 64 characters of email address.")
   if not _email_validator.match(email):
-    raise Exception("Invalid email address: '%s'.  We won't be able to figure out how to send mail to that address.")
+    raise DataError("Invalid email address: '%s'.  We won't be able to figure out how to send mail to that address.")
 #TODO: check for common mistakes that might not be mistakes in Javascript
 #_probable_email_address = re.compile(r'[\w.+-]+@[a-z-]+([.][a-z-]+)*[.][a-z]{2,4}', 'I')
 _pwd_validator = re.compile(r'^[^%]{4,64}$')  #TODO: permit '%'s when web.py can deal with it
 def _validate_password(pwd):
   if not _pwd_validator.match(pwd):
-    raise Exception("Invalid password.  Passwords must be between 4 and 64 characters, and not contain the character '%'")
+    raise DataError("Invalid password.  Passwords must be between 4 and 64 characters, and not contain the character '%'")
 
 
 #TODO: catch MySQL exceptions and raise custom ones.
@@ -55,24 +62,28 @@ class State:
         #self.ssh_client = paramiko.SSHClient()
         self.cluster_size_cache = {}
 
-        self.search = search.the
+        self.search = search.Search(database)
 
         try:
           self.active_cid = web.query('select active_cid from globals')[0].active_cid;
         except IndexError:
           self.active_cid = None #presumably, the first thing we'll do is clear the DB
 
-        
+    #mainly for testing, when we need to repeatedly make sane states
+    def close(self):
+      self.search.close()
+
+      
     # For use when web server is NOT running
     def connect(self, database='yb'):
-        web.load()
+        #web.load() #already done above
+        pass
 
     def clear(self): #nuke everything in the database
         for table in ['user', 'ticket', 'post', 'post_content', 'vote',
                       'cluster', 'cluster_connection', 'relevance',
                       'callout_votes', 'history', 'globals']:
             web.query('truncate %s' % table)
-        self.search.clear()
 
         web.query('insert into globals values (active_cid=0)')
         self.active_cid = 0
@@ -81,6 +92,9 @@ class State:
         for a in xrange(0,5):
             for b in xrange(0,5):
                 web.query('insert into cluster_connection values (%d, %d)' % (a,b))
+
+        self.search.clear()
+
 
     #TODO: impose restrictions on name contents 
     #TODO: don't store password directly!
@@ -114,13 +128,13 @@ class State:
     
     def get_user(self, uid):
         user = web.query('select *, cid%d as cid from user where id=%d' % (self.active_cid, uid))
-        if len(user) is 0: raise Exception("user with uid %d not found" % uid)
+        if len(user) is 0: raise DataError("user with uid %d not found" % uid)
 
         return user[0]
 
     def get_uid_from_name(self, name):
         user = web.select('user', where='name=%s' % web.sqlquote(name))
-        if len(user) is 0: raise Exception("user with name %s not found" % name)
+        if len(user) is 0: raise DataError("user with name %s not found" % name)
         return int(user[0].id)
 
     
@@ -145,7 +159,7 @@ class State:
     def get_post(self, pid, content=False):
         post = web.select('post', where='id=%d' % pid)
         
-        if len(post) is 0: raise Exception("article with pid %d not found" % pid)
+        if len(post) is 0: raise DataError("article with pid %d not found" % pid)
         
         if content == False:
             return post[0]

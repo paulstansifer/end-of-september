@@ -31,18 +31,21 @@ class SearchResult:
         self.score = score
 
 class Search:
-    def __init__(self):
+    def __init__(self, db_name):
         self.guesser = Bayes()
-        #TODO: use a configurable, absoulte path, so we don't have to deal with yb-search dirs everywhere
-        self.mainabase = xapian.WritableDatabase('yb-search', xapian.DB_CREATE_OR_OPEN)
+        self.name = db_name+'-search'
+        self.mainabase = xapian.WritableDatabase(self.name, xapian.DB_CREATE_OR_OPEN)
 
         self.indexer = xapian.TermGenerator()
         self.stemmer = xapian.Stem("english") #I18N
         self.indexer.set_stemmer(self.stemmer)
 
+    def close(self):
+        self.mainabase = None
+
     def clear(self):
-        self.mainabase = None;
-        self.mainabase = xapian.WritableDatabase('yb-search', xapian.DB_CREATE_OR_OVERWRITE)
+        self.mainabase = None
+        self.mainabase = xapian.WritableDatabase(self.name, xapian.DB_CREATE_OR_OVERWRITE)
 
     def stem(self, word):
         return self.stemmer(word.lower())
@@ -198,6 +201,4 @@ class Search:
 
     def update_support(self, pid, score):
         pass #TODO retrieve document and change its score.
-
-the = Search()
 
