@@ -6,3 +6,6 @@ yb-search
 paul.pbxuser
 paul.perspective
 .DS_Store
+*.o
+*.so
+*.a
