@@ -1,7 +1,7 @@
 var inFlight = 0;
 
 $(document).ready(function() {
-    $(".j_content").not(".expose").hide("normal");
+    $(".j_content").not(".expose").hide();
     $(".j_summary").not(".expose").show();
 
     //$(".dismisser").show();
@@ -59,24 +59,24 @@ function callout(id) {
   } else if (document.selection) {
     txt = document.selection.createRange().text;
   }
-  //var req = ajax("/users/"+username+"/vote/callout"+id+"?text="+escape(txt));
+  //var req = ajax("/articles/"+id+"/callout?text="+escape(txt));
 }
 
 function voteon(id, username) {
   $("#status"+id).html('');
   $.ajax({
-    url: '/users/'+username+'/vote/wtr'+id,
+    url: '/articles/'+id+'/wtr?just_result=yes',
     dataType: 'html', type: 'POST',
     success: function(data, textstatus) {
-        $('#wtr'+id).html(data);
+        $('#wtr'+id).hide().html(data).fadeIn('normal');
         $('#recentwtr').prepend(
-           "<li><a style='display:none' class='listedlink' href='/view/"
+           "<li><a style='display:none' class='listedlink' href='/articles/"
            +id+"'>"+ $("#claim"+id).text() + "</a></li>")
           .children(':first').children(':hidden').fadeIn('slow');
       },
     error: function(data, textstatus) {
         if(textstatus == 'timeout') {
-          $('#status'+id).html('<em>Unable to contact to server.  Are you online?</em>');
+          $('#status'+id).html('<em>Timeout trying to contact to server.</em>');
         } else {
           $('#status'+id).html('<em>Internal error talking to server.</em>');
         }

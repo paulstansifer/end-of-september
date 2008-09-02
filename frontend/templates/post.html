@@ -4,11 +4,11 @@ $def with (pid, extra_class, claim, summary_rendered, contents_rendered, age_ren
 <div style='clear: right'>
   <div class='sidebar'>
     <div id='sidebar_summary$pid' class='j_summary $extra_class' >
-      (<a href='javascript:expose($pid)' class='ajaxy'>expand</a> | <a href='/view/$pid'>page</a>)
+      (<a href='javascript:expose($pid)' class='ajaxy'>expand</a> | <a href='/article/$pid'>page</a>)
     </div>
     <div id='sidebar_contents$pid' class='j_content $extra_class' >
       <div class='sidebarsection'>
-        (<a href='javascript:shrink($pid)' class='ajaxy'>contract</a> | <a href='/view/$pid'>page</a>) <br />
+        (<a href='javascript:shrink($pid)' class='ajaxy'>contract</a> | <a href='/articl/$pid'>page</a>) <br />
         $:age_rendered ago <br />
         $:extras_rendered
       </div>
