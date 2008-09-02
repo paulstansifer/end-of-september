@@ -14,6 +14,10 @@ cp -R ../backend/* build/
 cp -R ../frontend/* build/
 #cp -Rf ../../engine/trunk/* build/
 
-# Start Yeah-But
+# Start something
 cd build
-python graypages.py
+if (($1 == tg)); then
+    python terminalgray.py;
+else
+    python graypages.py;
+fi;

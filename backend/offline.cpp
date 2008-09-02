@@ -15,7 +15,7 @@ using namespace std;
 int main(int argc, char* argv[]) {
   int users, articles;
   cin >> users >> articles;
-  Matrix key_users(articles, users);
+  Matrix key_users(articles, users); //transpose, because there are more articles than users.
   ColumnVector user_means(users);
   key_users = 0; //default: no vote
   int row = -1;
