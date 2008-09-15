@@ -16,7 +16,7 @@ cp -R ../frontend/* build/
 
 # Start something
 cd build
-if (($1 == tg)); then
+if [ "$1" = "tg" ]; then
     python terminalgray.py;
 else
     python graypages.py;

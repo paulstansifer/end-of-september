@@ -11,6 +11,7 @@ cp build_db.sql build/
 
 cd build
 mysql -u yeahbut yb_test < build_db.sql
+
 for test in test*.py
 do
     echo "===== $test ====="
