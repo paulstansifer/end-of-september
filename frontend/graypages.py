@@ -56,6 +56,10 @@ class login: #TODO: authenticate.  username or email address required, not both
 #TODO: should _cookie_session_ and _normal_style_ be classes?  I'm
 #starting to think it doesn't really make sense.
 
+
+class BitBucket:
+  def write(self, s): pass
+
 class normal_style:
   web.webapi.internalerror = web.debugerror
 
@@ -343,9 +347,15 @@ class favicon:
 def not_found():
   print render.not_found()
 
-
+def config(wsgifunc):
+  bb = BitBucket()
+  def ret_val(env, start_resp):
+    env['wsgi.errors'] = bb
+    return wsgifunc(env, start_resp)
+  return ret_val
+    
 def serve():
-  web.run(urls, globals(), web.reloader)
+  web.run(urls, globals(), web.reloader, config)
   
 if __name__ == "__main__":
   serve()
