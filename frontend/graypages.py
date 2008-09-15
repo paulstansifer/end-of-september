@@ -62,8 +62,13 @@ class BitBucket:
 
 class normal_style:
   web.webapi.internalerror = web.debugerror
+  
+  def __init__(self):
+    import time
+    self.start = time.time()
 
   def package(self, sidebar, content, real_user=False, username=None, js_files=[], title='firegray'):
+    import time
     print '''
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -84,6 +89,7 @@ class normal_style:
     print render.navbar(real_user, username)
     print content
     print '</div></body></html>'
+    log_dbg('total service time: %f seconds' % (time.time() - self.start))
 
   
   def nav_wrap(self, content, username, cur_batch, front, fresh):
@@ -238,13 +244,16 @@ class frontpage(cookie_session, normal_style):
     
     posts = online.gather(user, texas)[0:article_count]
     current_batch = user.current_batch
-    for post in posts:
-      texas.add_to_history(uid, post.id, current_batch)
-      content += post_div(post, uid, username)
-    texas.inc_batch(user) #batches seperate the history into pages
+    for i in xrange(0, len(posts)):
+      texas.add_to_history(uid, posts[i].id, current_batch, i)
+      content += post_div(posts[i], uid, username)
 
     if len(posts) == 0:
       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
+    else:
+      texas.inc_batch(user) #batches seperate the history into pages
+
+
 
     sidebar = render.ms_sidebar([texas.get_post(wtr) for wtr in texas.recent_votes(uid, 4)])
 

@@ -45,7 +45,7 @@ def _validate_password(pwd):
   
 class State:
     def __init__(self, database='yb'):
-        log_dbg('Initializing state . . .')
+        log_dbg('Initializing state (%s) . . .' % database)
         
         random.seed()
 
@@ -178,12 +178,12 @@ class State:
         web.query('update user set current_batch=%d where id=%d'
                   % (user.current_batch+1, user.id))
 
-    def add_to_history(self, uid, pid, batch):
-        web.insert('history', uid=uid, pid=pid, batch=batch)
+    def add_to_history(self, uid, pid, batch, position):
+        web.insert('history', uid=uid, pid=pid, batch=batch, position=position)
 
     def get_history(self, uid, batch):
         pids = [s.pid for s in
-                web.query('select pid from history where uid=%d and batch=%d'
+                web.query('select pid from history where uid=%d and batch=%d order by position'
                          % (uid, batch))]
 
         return [self.get_post(pid, True) for pid in pids]

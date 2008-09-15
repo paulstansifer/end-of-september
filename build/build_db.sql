@@ -52,28 +52,29 @@ create table post (
     ) engine=InnoDB;
 
 create table post_content (
-    pid integer references post,
-    raw text,
+    pid integer            not null references post,
+    raw text               not null,
     safe_html text,
     tokens text
     ) engine=InnoDB;
 
 create table vote (
     -- id serial primary key,
-    uid integer references user,
-    pid integer references post,
-    date_voted timestamp default now(),
+    uid integer            not null references user,
+    pid integer            not null references post,
+    date_voted timestamp   not null default now(),
     primary key(uid, pid)
     ) engine=InnoDB;
 
 create table cluster (
-    id serial primary key,
-    num_users integer
+    -- num_users is probably not null also
+    id serial              not null primary key,
+    num_users integer 
     ) engine=InnoDB;
 
 create table cluster_connection (
-    cid_from integer references cluster,
-    cid_to integer references cluster,
+    cid_from integer       not null references cluster,
+    cid_to integer         not null references cluster,
     primary key(cid_from, cid_to)
     -- connection strength?
     ) engine=InnoDB;
@@ -95,7 +96,8 @@ create table callout_votes (
 create table history (
     uid integer references user,
     pid integer references post,
-    date_viewed timestamp default now(),
+    -- date_viewed timestamp default now(),
+    position integer,
     batch integer,
     primary key(uid, pid)
     ) engine=InnoDB;
