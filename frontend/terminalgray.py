@@ -48,14 +48,16 @@ def _become(username):
   #print "becoming", username
   _get('/login?name=' + username)
 
-def get_an_article(username):
-  s = _get('/users/' + username + '/frontpage?articles=1')
-  if len(s.articles) == 0:
-    return -1
-  elif len(s.articles) == 1:
-    return pid_to_epid[s.articles[0]]
-  else:
-    raise Exception('More articles returned than requested')
+#tries to return _count_ articles for _username_, may return fewer
+def get_articles(username, count):
+  _become(username)
+  s = _get('/users/' + username + '/frontpage?fresh=yes&articles=%d' % count)
+  return [pid_to_epid[a] for a in s.articles]
+
+def get_history(username, batch):
+  _become(username)
+  s = _get('/users/' + username + '/history/%d' % batch)
+  return [pid_to_epid[a] for a in s.articles]
 
 def add_user(username):
   _post('/login', {'name': username, 'pwd': 'asdf1234', 'email': username+'@example.com'})
@@ -73,13 +75,13 @@ def compose_article(username, epid):
   epid_to_pid[epid] = pid
   pid_to_epid[pid] = epid
 
-def dialog():
+def init():
   import state
   log_dbg('Initializing terminalgray . . .')
   state.the.__init__('yb_test') #horrible hack,
   #but I can't figure out how to get web.py to let me pass a
   #parameter to graypages
-  state.the.clear()
+  clear()
 
   class GP(threading.Thread):
     def run(self):
@@ -87,6 +89,16 @@ def dialog():
       graypages.serve()
 
   GP().start()
+
+
+def clear():
+  import state
+  state.the.clear()
+
+def dialog():
+  import state
+  init()
+
     
   while True:
     cmd = raw_input()
@@ -94,7 +106,9 @@ def dialog():
     if parts[0] == 'UP':
       vote_for_article('tgu_'+parts[1], int(parts[2]))
     elif parts[0] == 'GET':
-      print get_an_article('tgu_' + parts[1])
+      articles = get_articles('tgu_' + parts[1], 1)
+      if len(articles) == 0: print "-1"
+      else: print articles[0]
       sys.stdout.flush()
     elif parts[0] == 'JOIN':
       add_user('tgu_'+parts[1])
