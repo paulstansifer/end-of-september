@@ -7,14 +7,11 @@ while [[ ( $PWD != */yeahbut ) && ($PWD != /) ]] ; do
 done;
 
 export PYTHONPATH="$PWD"
-
-#make yb_test sane
-mysql -u yeahbut yb_test < build/build_db.sql
-
 cd frontend/
 
-for test in test*.py
-do
-    echo "===== $test ====="
-    python $test
-done
+# Start something
+if [ "$1" = "tg" ]; then
+    python terminalgray.py;
+else
+    python graypages.py;
+fi;

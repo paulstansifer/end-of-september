@@ -1,7 +1,11 @@
 import unittest
-from terminalgray import get_articles, add_user, vote_for_article, compose_article, get_history
-import terminalgray
 import time
+
+from frontend.terminalgray import (
+  get_articles, add_user, vote_for_article,
+  compose_article, get_history)
+import frontend.terminalgray
+
 
 terminalgray.init()
 

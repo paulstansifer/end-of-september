@@ -1,13 +1,11 @@
 #!/usr/bin/python
-# $Id: graypages.py 100 2008-04-11 00:34:48Z paul $
 import web
 from datetime import datetime
 
-import state, search
-import engine
+from backend import state, search, engine, online
 import render_post
-import online
-from log import *
+
+from frontend.log import *
 
 log_dbg("Initializing graypages . . .")
 

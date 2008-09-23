@@ -3,7 +3,7 @@ from urllib import urlencode
 import HTMLParser, threading
 import re
 import sys
-from log import *
+from frontend.log import *
 
 #We can use this for integration tests.  It makes requests and
 #screenscrapes the results for results.
@@ -76,7 +76,7 @@ def compose_article(username, epid):
   pid_to_epid[pid] = epid
 
 def init():
-  import state
+  from backend import state
   log_dbg('Initializing terminalgray . . .')
   state.the.__init__('yb_test') #horrible hack,
   #but I can't figure out how to get web.py to let me pass a
@@ -85,18 +85,18 @@ def init():
 
   class GP(threading.Thread):
     def run(self):
-      import graypages
+      from frontend import graypages
       graypages.serve()
 
   GP().start()
 
 
 def clear():
-  import state
+  from backend import state
   state.the.clear()
 
 def dialog():
-  import state
+  import backend.state
   init()
 
     
