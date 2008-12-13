@@ -89,7 +89,9 @@ if(not $shuffling) {
 open(KEY_USERS, ">", "ex.key_users") or die $!;
 my $line = 1;
 print STDERR "emitting key users\n";
-print KEY_USERS "$num_key_users $num_articles\n";
+if($for_newmat) {
+  print KEY_USERS "$num_key_users $num_articles\n";
+}
 foreach (@key_users) {
 
   print KEY_USERS $line++, " ";
@@ -114,6 +116,10 @@ foreach (@key_users) {
     }
     print KEY_USERS ":$vote_weight ";
   }
+  if($line == 1) {
+    #add a dummy article after the end, to make all matrices sized right.
+    print @key_articles+1+1 . ":0"
+  }
       
   print KEY_USERS "\n";
 }
@@ -126,27 +132,27 @@ foreach (@users) {
     close(USER_CHUNK);
     print STDERR "emitting user chunk $user_chunk\n";
     open(USER_CHUNK, ">", "ex.users_$user_chunk") or die $!;
-    print "$chunk_size $num_articles\n";
+    if($for_newmat) {
+      print "$chunk_size $num_articles\n";
+    }
     $user_chunk++; 
     $line = 1;
     
-    print USER_CHUNK $user++, " ";  #HACK: dummy user to make the columns come out right
-    foreach (0..@key_articles) {
-      print USER_CHUNK ($_+1), ":0 ";
-    }
-    print USER_CHUNK "\n";
-    $user++;
+
+    #print USER_CHUNK $user++, " ";  #HACK: dummy user to make the columns come out right
+    #foreach (0..@key_articles) {
+    #  print USER_CHUNK ($_+1), ":0 ";
+    #}
+    #print USER_CHUNK "\n";
+    #$user++;
   }
   
   if(not $shuffling) { 
     print USER_MAP "$user $me\n" #emit overall user number
   }
   print USER_CHUNK $line++, " ";
-  #print USER_CHUNK "$_";
   $me = $_;
-#  if($shuffling) {
-#    $me = $user_shuffling{$me};
-#  }
+
   %votes_hash = %{ $votes{$me} };
   $vote_count = keys %votes_hash;
   $vote_weight = $weighting ? 1.0 / sqrt($vote_count) : 1;
@@ -159,6 +165,10 @@ foreach (@users) {
       print USER_CHUNK $key_articles_hash{$article};
     }
     print USER_CHUNK ":$vote_weight ";
+  }
+  if($line == 1) {
+    #add a dummy article after the end, to make all matrices sized right.
+    print @key_articles+1+1 . ":0";
   }
   
   print USER_CHUNK "\n";
