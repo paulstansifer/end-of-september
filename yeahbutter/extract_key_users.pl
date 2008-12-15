@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+use Getopt::Long;
 
 sub shuffle(@) {
   for($i = @_-1; $i > 0; $i--) {
@@ -9,26 +10,38 @@ sub shuffle(@) {
   }
 }
 
-$num_key_users = shift;
-$votes_min = shift; #16
-$votes_max = shift; #48
+
+$num_key_users = 500;
+$votes_min = -1;
+$votes_max = -1;
 $shuffling = 0;
 $weighting = 0;
 $chunk_size = 1000;
 
-open(LOG, ">", "ex.extraction_log");
-print LOG "key users: $num_key_users\n";
-print LOG "key user vote range: $votes_min < _ < $votes_max\n";
-print LOG "shuffling " . ($shuffling ? "on" : "off") . "\n";
-print LOG "weighting " . ($weighting ? "on" : "off") . "\n";
+$cmd_line = "$0 " . join(' ', @ARGV);
 
+GetOptions(
+  'key_users=i' => \$num_key_users,
+  'shuffling!' => \$shuffling,
+  'weighting!' => \$weighting,
+  'min_votes=i' => \$votes_min,
+  'max_votes=i' => \$votes_max,
+  'chunk_size=i' => \$chunk_size
+);
+
+open(LOG, ">", "ex.extraction_log");
+print LOG "$cmd_line\n";
+#print LOG "key users: $num_key_users\n";
+#print LOG "key user vote range: $votes_min < _ < $votes_max\n";
+#print LOG "shuffling " . ($shuffling ? "on" : "off") . "\n";
+#print LOG "weighting " . ($weighting ? "on" : "off") . "\n";
 
 my $total_votes = 0;
 my %votes = ();
 my %articles_hash = ();
 my %users_hash = ();
 my %article_numbers = ();
-while(<STDIN>) {
+while(<>) {
   next if(/^\s*$/);
   /^([^|]+)\|([^|]+)/ or warn "incorrectly formatted line: [$_]";
   $user = $2;
@@ -74,6 +87,10 @@ foreach (1 .. $num_key_users) {
     }
   }
 }
+
+print LOG "an estimated " . (100 * $num_key_users / $next_key_user) . "% of users are eligible to be key.\n";
+print "an estimated " . (100 * $num_key_users / $next_key_user) . "% of users are eligible to be key.\n";
+
 my @key_users = keys %key_users_hash;
 my @key_articles = keys %key_articles_hash;
 
@@ -137,20 +154,12 @@ foreach (@users) {
     }
     $user_chunk++; 
     $line = 1;
-    
-
-    #print USER_CHUNK $user++, " ";  #HACK: dummy user to make the columns come out right
-    #foreach (0..@key_articles) {
-    #  print USER_CHUNK ($_+1), ":0 ";
-    #}
-    #print USER_CHUNK "\n";
-    #$user++;
   }
   
   if(not $shuffling) { 
     print USER_MAP "$user $me\n" #emit overall user number
   }
-  print USER_CHUNK $line++, " ";
+  print USER_CHUNK $line, " ";
   $me = $_;
 
   %votes_hash = %{ $votes{$me} };
@@ -168,10 +177,13 @@ foreach (@users) {
   }
   if($line == 1) {
     #add a dummy article after the end, to make all matrices sized right.
-    print @key_articles+1+1 . ":0";
+    print USER_CHUNK " " . @key_articles+1+1 . ":0";
   }
   
+  $line++;
   print USER_CHUNK "\n";
 }
 
+print STDERR "emitted " . ($user_chunk) . " chunks.\n";
+print LOG "emitted " . ($user_chunk) . " chunks.\n";
 
