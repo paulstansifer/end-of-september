@@ -1,12 +1,12 @@
 require(e1071)
 require(igraph)
 
-loc <- "/Users/paul/Desktop/netflix/ex/"
+loc <- "/Users/paul/Desktop/netflix/ex/proper_format"
 
 d <- 7
 small.distance <- 0.1
 
-key.users <- data.frame(as.matrix(read.matrix.csr(loc+"ex.key_users")$x))
+key.users <- data.frame(as.matrix(read.matrix.csr(paste(loc, "ex.key_users.100",sep="/"))$x))
 
 pca <- prcomp(key.users, scale=FALSE)
 
@@ -17,7 +17,7 @@ raw <- c()
 accum <- c()
 
 for(file in dir(loc, pattern="ex.users_.*")) {
-	more.users <- data.frame(as.matrix(read.matrix.csr(file)$x))
+	more.users <- data.frame(as.matrix(read.matrix.csr(paste(loc,file,sep="/"))$x))
 	raw <- rbind(raw, more.users)
 	accum <- rbind(accum, predict(pca, more.users)[,1:d])
 }
