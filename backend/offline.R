@@ -17,7 +17,9 @@ raw <- c()
 accum <- c()
 
 for(file in dir(loc, pattern="ex.users_.*")) {
+	print(paste("opening", file))
 	more.users <- data.frame(as.matrix(read.matrix.csr(paste(loc,file,sep="/"))$x))
+	print(paste("(dimensions", dim(more.users), ")"))
 	raw <- rbind(raw, more.users)
 	accum <- rbind(accum, predict(pca, more.users)[,1:d])
 }
@@ -26,15 +28,18 @@ points(accum, col = 'black')
 points(predict(pca, key.users), col = 'red')
 
 total.users <- dim(accum)[1]
-
+print(paste(total.users, " total users"))
+print("clustering...")
 clusters <- kmeans(accum, sqrt(total.users)/2)
 
+print("preparing graph...")
 distances <- as.matrix(dist(clusters$centers))
 complete.graph <- graph.adjacency(distances, weighted=TRUE)
 mst <- minimum.spanning.tree(complete.graph)
 smallish.distances <- apply(distances, c(1,2), function(x) {if(x > small.distance) 0 else x})
 community.connections <- graph.union(graph.adjacency(smallish.distances), mst)
 
+print("emitting graph...")
 write(t(accum), file="pcaed_users", ncolumns=dim(accum)[2])
 write(t(clusters$cluster), file="cluster_assignments", ncolumns=1)
 write(t(clusters$centers), file="cluster_centers", ncolumns=dim(clusters$centers)[2])
@@ -43,6 +48,7 @@ write(t(clusters$centers), file="cluster_centers", ncolumns=dim(clusters$centers
 write(t(cbind(unlist(community.connections[3]), unlist(community.connections[4]))), file="cluster_connections", ncolumns=2)
 articles <- 1:(dim(raw)[2])
 overall.value <- cbind(articles, articles)
+print("evaluating articles...")
 for(article in articles) {
 	clustered.votes <- 1:length(clusters$size) * 0
 	for(voter in 1:(dim(raw)[1])) {
