@@ -9,3 +9,5 @@ paul.perspective
 *.o
 *.so
 *.a
+.gdb_history
+.Rhistory
