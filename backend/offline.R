@@ -1,5 +1,6 @@
 require(e1071)
 require(igraph)
+require(cluster)
 
 loc <- "/Users/paul/Desktop/netflix/ex/proper_format"
 
@@ -29,19 +30,28 @@ points(predict(pca, key.users), col = 'red')
 
 total.users <- dim(accum)[1]
 print(paste(total.users, " total users"))
+
 print("clustering...")
-clusters <- kmeans(accum, sqrt(total.users)/2)
+#clusters <- kmeans(accum, sqrt(total.users)/2)
+clusters <- clara(accum, sqrt(total.users)/2, stand=FALSE,
+				trace=2, rngR=TRUE)
+clusplot(clusters)
 
 print("preparing graph...")
-distances <- as.matrix(dist(clusters$centers))
+print(clusters$medoids)
+print(dist(clusters$medoids))
+#distances <- as.matrix(dist(clusters$centers))
+distances <- dist(clusters$mediods)
 complete.graph <- graph.adjacency(distances, weighted=TRUE)
 mst <- minimum.spanning.tree(complete.graph)
 smallish.distances <- apply(distances, c(1,2), function(x) {if(x > small.distance) 0 else x})
 community.connections <- graph.union(graph.adjacency(smallish.distances), mst)
 
 print("emitting graph...")
-write(t(clusters$cluster), file="cluster_assignments", ncolumns=1)
-write(t(clusters$centers), file="cluster_centers", ncolumns=dim(clusters$centers)[2])
+#write(t(clusters$cluster), file="cluster_assignments", ncolumns=1)
+write(t(clusters$clustering), file="cluster_assignments", ncolumns=1)
+#write(t(clusters$centers), file="cluster_centers", ncolumns=dim(clusters$centers)[2])
+write(t(as.matrix(clusters$medoids)), file="cluster_centers", ncolumns=dim(clusters$centers)[2])
 
 print("emitting users...")
 write(t(accum), file="pcaed_users", ncolumns=dim(accum)[2])
