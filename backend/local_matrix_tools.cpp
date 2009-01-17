@@ -66,5 +66,41 @@ void read_sparse_matrix(Matrix & m, istream & in) {
 }
 
 void read_plain_matrix(Matrix & m, istream & in) {
+  const int MAX_LINE = 4096;
+  char line[MAX_LINE];
+  in.getline(line, MAX_LINE);
+
+  int spaces = 0;
+  bool in_a_gap = true;
+  for(char * i = line; *i; i++) {
+    if(*i == ' ') {
+      if(!in_a_gap) {
+        in_a_gap = true;
+        spaces++;
+      }
+    } else {
+      in_a_gap = false;
+    }
+  }
+  int width = spaces + 1;
+
+  int height = 1;
+  while(!in.eof()) {
+    in.getline(line, MAX_LINE);
+    if(strlen(line) > 1) { //non-empty lines
+      height++;
+    }
+  }
+
   in.seekg(0, ios::beg); //go back to the beginning, now that we know the size
-};
+
+  m.ReSize(height, width);
+
+  for(int x = 1; x <= width; x++) {
+    for(int y = 1; y <= height; y++) {
+      int val;
+      in >> val;
+      m(y,x) = val;
+    }
+  }
+}

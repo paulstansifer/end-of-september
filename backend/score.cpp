@@ -1,3 +1,8 @@
+/* Inputs: cluster assignments (from clustering in R), raw vote data
+ * Output: scores for articles, based on the number of votes they
+ * received, and from which users.
+ */
+
 
 #define WANT_STREAM
 #define WANT_MATH
@@ -15,66 +20,60 @@
 
 using namespace std;
 
-//TODO: pull out and generalize into read_plain_matrix
-void read_plain(Matrix & m, char* filename) {
-  ifstream matrixfile(filename, ifstream::in);
-  char line[1024];
-  matrixfile.getline(line, 1024);
 
-  int spaces = 0;
-  bool in_a_gap = true;
-  for(char * i = line; *i != '\n'; i++) {
-    if(*i == ' ') {
-      if(!in_a_gap) {
-        in_a_gap = true;
-        spaces++;
-      }
-    } else {
-      in_a_gap = false;
-    }
-  }
-  int width = spaces + 1;
-
-  int height = 1;
-  while(!matrixfile.eof()) {
-    matrixfile.getline(line,1024);
-    if(strlen(line) > 1) { //non-empty lines
-      height++;
-    }
-  }
-
-  matrixfile.close();
-  matrixfile.open(filename);
-  m.ReSize(width, height);
-
-  for(int x = 1; x <= width; x++) {
-    for(int y = 1; y <= height; y++) {
-      int val;
-      matrixfile >> val;
-      m(x,y) = val;
-    }
-  }
-}
-
+//As an optimization, it would be nice to have the vote data in
+//transposed form, so we can process one article at a time, and
+//therefore store a 1 by |users| blob of data at a time, instead of
+//working with |users| by |articles|
 void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
-  int clusters = 
-  for(int article = 0; article < votes.nrows(); article++) {
-    for(int voter = 0; voter < votes.ncols(); voter++) {
+  //count clusters
+  int max_cluster = 0;
+  for(int voter = 1; voter <= votes.ncols(); voter++) {
+    max_cluster = max_cluster > cluster_assignments(voter, 1) ?
+      max_cluster : (int)cluster_assignments(voter, 1); //always an integer
+  }
+  printf("Highest cluster: %d\n", max_cluster);
+
+  //calculate cluster sizes
+  int cluster_sizes[max_cluster];
+  for(int i = 1; i <= max_cluster; i++) {
+    cluster_sizes[i]=0;
+  }
+  for(int voter = 1; voter <= votes.ncols(); voter++) {
+    cluster_sizes[(int)cluster_assignments(voter,1)]++;
+  }
+
+  for(int article = 1; article <= votes.nrows(); article++) {
+
+    //zero out counter
+    int clustered_votes[max_cluster];
+    for(int i = 0; i < max_cluster; i++)
+      clustered_votes[i] = 0;
+
+    //count votes for this article, in bins by cluster
+    for(int voter = 1; voter <= votes.ncols(); voter++) {
       if(votes(voter,article) > 0) {
-        int voter_cluster
-
-
-
+        int voter_cluster = (int)cluster_assignments(voter,1);
+        clustered_votes[voter_cluster]++;
+      }
+    }
+    double total_value = 0;
+    for(int i = 1; i <= max_cluster; i++) {
+      total_value += 1.0 / pow(clustered_votes[i] / (double)cluster_sizes[i], 0.25);
+    }
+    printf("article %d has value %.2f\n", article, total_value);
+  }
 }
-  
+
+Matrix article_scores;
+
 int main(int argc, char* argv[]) {
   Matrix cluster_assignments;
   Matrix votes;
   for(int i = 1; i < argc; i++) {
     if(strcmp(argv[i], "-c") == 0) {
-      //ifstream caf(argv[++i]);
-      //read_sparse_matrix(cluster_assignments, caf);
-      read_plain(cluster_assignments, argv[++i]);
+      ifstream caf(argv[++i]);
+      read_plain_matrix(cluster_assignments, caf);
     }
     if(strcmp(argv[i], "-v") == 0) {
       while(++i < argc) {
@@ -83,6 +82,7 @@ int main(int argc, char* argv[]) {
       }
     }
   }
-  
-  
+  emit_scores(cluster_assignments, votes);
 }
+
+

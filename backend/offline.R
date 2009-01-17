@@ -36,10 +36,9 @@ print("clustering...")
 clusters <- clara(accum, sqrt(total.users)/2, stand=FALSE,
 				trace=2, rngR=TRUE)
 clusplot(clusters)
+print(clusters$silinfo$avg.width)
 
 print("preparing graph...")
-print(clusters$medoids)
-print(dist(clusters$medoids))
 #distances <- as.matrix(dist(clusters$centers))
 distances <- dist(clusters$mediods)
 complete.graph <- graph.adjacency(distances, weighted=TRUE)
