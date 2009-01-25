@@ -12,8 +12,9 @@ sub shuffle(@) {
 
 
 $num_key_users = 500;
-$votes_min = -1;
-$votes_max = -1;
+$min_votes_key = -1;
+$min_votes = -1;
+$max_votes_key = -1;
 $shuffling = 0;
 $weighting = 0;
 $chunk_size = 1000;
@@ -24,15 +25,16 @@ GetOptions(
   'key_users=i' => \$num_key_users,
   'shuffling!' => \$shuffling,
   'weighting!' => \$weighting,
-  'min_votes=i' => \$votes_min,
-  'max_votes=i' => \$votes_max,
+  'min_votes=i' => \$min_votes,
+  'min_votes_key=i' => \$min_votes_key,
+  'max_votes_key=i' => \$max_votes_key,
   'chunk_size=i' => \$chunk_size
 );
 
 open(LOG, ">", "ex.extraction_log");
 print LOG "$cmd_line\n";
 #print LOG "key users: $num_key_users\n";
-#print LOG "key user vote range: $votes_min < _ < $votes_max\n";
+#print LOG "key user vote range: $min_votes_key < _ < $max_votes_key\n";
 #print LOG "shuffling " . ($shuffling ? "on" : "off") . "\n";
 #print LOG "weighting " . ($weighting ? "on" : "off") . "\n";
 
@@ -67,14 +69,14 @@ foreach (1 .. $num_key_users) {
 #take the first $num_key_users random users
 #...but only ones that have enough votes
   do {
-    if($next_key_user > $num_users) { die "ran out of users with $votes_min < votes < $votes_max"; }
+    if($next_key_user > $num_users) { die "ran out of users with $min_votes_key < votes < $max_votes_key"; }
 
     $me = $users[$next_key_user++]; 
     %votes_hash = %{ $votes{$me} };
         
     #To be a key user, you must have voted for
     #a reasonable number of articles
-  } while(keys %votes_hash < $votes_min or keys %votes_hash > $votes_max);
+  } while(keys %votes_hash < $min_votes_key or keys %votes_hash > $max_votes_key);
 
   $key_users_hash{$me} = 1;
 #if($shuffling) {
@@ -140,6 +142,12 @@ foreach (@key_users) {
       
   print KEY_USERS "\n";
 }
+
+print STDERR scalar(@users) . " before pruning those with too few votes...\n";
+#weed out users who haven't voted enough times
+@users = grep {keys(%{ $votes{$_} }) >= $min_votes } @users;
+print STDERR scalar(@users) ." afterward.\n";
+
 
 my $user_chunk = 0;
 my $user = 0;

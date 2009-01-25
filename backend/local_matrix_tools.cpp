@@ -1,5 +1,7 @@
 #include "local_matrix_tools.h"
 
+#include <vector>
+
 using namespace std;
 
 void normalize_rows(Matrix & m) {
@@ -24,6 +26,7 @@ int max(int a, int b) { return a > b ? a : b; }
 //Note: you can call this repeatedly to read more values into a matrix.
 void read_sparse_matrix(Matrix & m, istream & in) {
   int rows=-1, cols=-1;
+  vector<string> entries;
 
   int row = -1;
   while(!in.eof()) {
@@ -37,17 +40,16 @@ void read_sparse_matrix(Matrix & m, istream & in) {
       const int col = atoi(token.substr(0, colon_loc).c_str());
       cols = max(col, cols);
     }
+    entries.push_back(token);
   }
-
-  in.seekg(0, ios::beg);
 
   m.resize_keep(max(rows,m.nrows()), max(cols,m.ncols()));
 
   row = -1;
 
-  while(!in.eof()) {
-    string token;
-    in >> token;
+  for(unsigned i = 0; i < entries.size(); i++) {
+    
+    string token = entries[i];
 
     size_t colon_loc = token.find(':');
     if(colon_loc == string::npos) {
@@ -68,39 +70,35 @@ void read_sparse_matrix(Matrix & m, istream & in) {
 void read_plain_matrix(Matrix & m, istream & in) {
   const int MAX_LINE = 4096;
   char line[MAX_LINE];
+  vector<int> values;
+
+  int width = 0, height = 1;
+
   in.getline(line, MAX_LINE);
+  char *token = strtok(line, " ");
 
-  int spaces = 0;
-  bool in_a_gap = true;
-  for(char * i = line; *i; i++) {
-    if(*i == ' ') {
-      if(!in_a_gap) {
-        in_a_gap = true;
-        spaces++;
-      }
-    } else {
-      in_a_gap = false;
-    }
+  while(token != NULL) {
+    int val = atoi(token);
+    values.push_back(val);
+    width++;
+    token = strtok(NULL, " ");
   }
-  int width = spaces + 1;
 
-  int height = 1;
   while(!in.eof()) {
-    in.getline(line, MAX_LINE);
-    if(strlen(line) > 1) { //non-empty lines
-      height++;
-    }
+    int val;
+    in >> val;
+    values.push_back(val);
   }
 
-  in.seekg(0, ios::beg); //go back to the beginning, now that we know the size
+  height = values.size() / width;
 
   m.ReSize(height, width);
 
+  int idx = 0;
   for(int x = 1; x <= width; x++) {
     for(int y = 1; y <= height; y++) {
-      int val;
-      in >> val;
-      m(y,x) = val;
+
+      m(y,x) = values[idx++];
     }
   }
 }
