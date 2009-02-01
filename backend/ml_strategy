@@ -1,6 +1,6 @@
 Analysis: use enough dimensions to capture 95% of the variance?  Or 10 dimensions or so?
 
-Offline:  (key user) PCA -> k-means -> approximate minimum spanning tree
+Offline:  (key user) PCA -> clustering -> approximate minimum spanning tree
 ...gets you clusters, linked by nearness, weighted by nearness
 
 Online:  
@@ -12,7 +12,7 @@ Online:
 ---In more detail---
 Offline:
  * Apply key-user-PCA to reduce users to D-dimensional vectors.
- * Use k-means clustering to summarize into clusters (easy in R, but
+ * Use clara clustering to summarize into clusters (easy in R, but
 we need to pick k -- it should be high-ish.  My guess is around the
 square root of the number of users).
  * Approximate minimum spanning tree:  calculate a minimum spanning
@@ -49,3 +49,27 @@ clusters, but not too many more.
 pick some, or maybe just grab the last ten)
   + Filter out ones already viewed, and rank by absolute value
 (possibly penalizing for age).
+
+---Variables---
+
+**Metrics** For PCA and clustering, we can choose between Euclidean
+and Manhattan metrics.  There may be more exotic ones (I seem to
+remember one in the vegan package) that will be more interesting, but
+it will probably be difficult to apply them.
+
+**N** number of dimensions from PCA to keep.  Other than inefficiency,
+there is probably no penalty for setting this too high.
+
+**k** number of clusters requested.  For scoring based on cluster
+diversity, this can matter a lot.  For k=1 and k=|users|, this
+degenerates to not having clustered at all.  Primarily, it needs to be
+a number that captures the structure of the data well -- internal
+metrics (I believe that clara tries to minimize the average cluster
+radius) reflect this.  But scoring is probably strongly affected by
+whether breadth (hitting more clusters) or depth (getting more votes
+in each cluster) is more emphasized.
+
+**cluster scoring formula** How much more valuable are the first votes
+in a cluster?  Do we penalize for overall score, meaning that being
+too cluster-centered is a problem?
+
