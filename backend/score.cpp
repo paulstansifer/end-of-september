@@ -41,7 +41,7 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     max_cluster = max_cluster > cluster_assignments(voter, 1) ?
       max_cluster : (int)cluster_assignments(voter, 1); //always an integer
   }
-  printf("Highest cluster: %d\n", max_cluster);
+  printf("#Highest cluster: %d\n", max_cluster);
 
   //calculate cluster sizes
   int cluster_sizes[max_cluster];
@@ -52,7 +52,7 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     cluster_sizes[(int)cluster_assignments(voter,1)]++;
   }
   for(int i = 1; i <= max_cluster; i++) {
-    printf("cluster %d has size %d.\n", i, cluster_sizes[i]);
+    printf("#cluster %d has size %d.\n", i, cluster_sizes[i]);
   }
 
 
@@ -76,11 +76,11 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     double total_value = 0;
     for(int i = 1; i <= max_cluster; i++) {
       if(cluster_sizes[i] < 5) continue; //too extreme (HACK)
-      cscores[i] = clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
+      cscores[i] = clustered_votes[i] ; // / pow((double)cluster_sizes[i], 0.75);
 
-      total_value += clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
+      total_value += clustered_votes[i] ; // / pow((double)cluster_sizes[i], 0.75);
     }
-    total_value  /= pow(raw_score, popularity_reduction);
+    total_value /= pow(raw_score, popularity_reduction);
 
     if(total_value > top_score) {
       top_score = total_value;
@@ -108,6 +108,13 @@ Matrix article_scores;
 int main(int argc, char* argv[]) {
   Matrix cluster_assignments;
   Matrix votes;
+
+  fprintf(stderr, "#command: \"");
+  for(int i = 0; i < argc; i++)
+    fprintf(stderr, "%s ", argv[i]);
+  fprintf(stderr, "\"\n");
+
+
   for(int i = 1; i < argc; i++) {
     if(strcmp(argv[i], "-p") == 0) {
       popularity_reduction = atof(argv[++i]);

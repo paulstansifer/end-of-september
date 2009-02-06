@@ -1,13 +1,14 @@
+#we always have to run this twice to make it work -- why?
 require(e1071)
 require(igraph)
 require(cluster)
 
-loc <- "/Users/paul/Desktop/netflix/ex/jan24"
+loc <- "/Users/paul/Desktop/netflix/ex/jan29"
 
-d <- 7
+d <- 9
 small.distance <- 0.1
 
-key.users <- data.frame(as.matrix(read.matrix.csr(paste(loc, "ex.key_users.250",sep="/"))$x))
+key.users <- data.frame(as.matrix(read.matrix.csr(paste(loc, "ex.key_users.300",sep="/"))$x))
 
 pca <- prcomp(key.users, scale=FALSE)
 
