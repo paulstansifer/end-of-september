@@ -1,0 +1,477 @@
+
+R version 2.8.0 (2008-10-20)
+Copyright (C) 2008 The R Foundation for Statistical Computing
+ISBN 3-900051-07-0
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> dat <- read.table("/Users/paul/Desktop/reviews.txt")
+> dat[1:10,]
+    V1       V2       V3
+1  1.5  5757.05 3.038462
+2  3.0 12932.23 3.333333
+3  3.0 12823.20 4.050000
+4  3.0 20410.90 3.028455
+5  3.0 14401.00 3.470588
+6  3.5 36280.78 4.118638
+7  3.0 31754.45 3.435527
+8  1.0 28789.47 3.613232
+9  1.5 30050.57 3.517375
+10 3.5 32389.06 3.751269
+> colnames(dat) <- c("ebert", "us", "netflix")
+> plot(us ~ netflix, data=dat)
+> plot(us ~ netflix, data=dat, log="x")
+> plot(us ~ netflix, data=dat, log="y")
+> plot(1/us ~ netflix, data=dat, log="y")
+> plot(us ~ netflix, data=dat)
+> plot(us ~ netflix, data=dat, pchr=5)
+Warning messages:
+1: In plot.window(...) : "pchr" is not a graphical parameter
+2: In plot.xy(xy, type, ...) : "pchr" is not a graphical parameter
+3: In axis(side = side, at = at, labels = labels, ...) :
+  "pchr" is not a graphical parameter
+4: In axis(side = side, at = at, labels = labels, ...) :
+  "pchr" is not a graphical parameter
+5: In box(...) : "pchr" is not a graphical parameter
+6: In title(...) : "pchr" is not a graphical parameter
+> plot(us ~ netflix, data=dat, pch=5)
+> plot(us ~ netflix, data=dat, pch=as.character(1:(len(dat)[1]))
++ 
++ )
+Error in eval(expr, envir, enclos) : could not find function "len"
++ plot(us ~ netflix, data=dat, pch=as.character(1:(length(dat)[1])))
+> with(dat, dat[netflix > 4 && us < 20000,])
+[1] ebert   us      netflix
+<0 rows> (or 0-length row.names)
+> with(dat, dat[netflix > 4 & us < 20000,])
+  ebert      us netflix
+3     3 12823.2    4.05
+> plot(us ~ netflix, data=dat, pch=as.vector(as.character(1:(length(dat)[1])))
++ )
+> plot(us ~ netflix, data=dat, type="none")
+Warning message:
+In plot.xy(xy, type, ...) :
+  plot type 'none' will be truncated to first character
+> plot(us ~ netflix, data=dat, pty="none")
+> ?plot
+> plot(us ~ netflix, data=dat, type="n")
+> text(us ~ netflix, data=dat, text=as.character(1:(length(dat)[1])))
+Error in eval(expr, envir, enclos) : object "us" not found
+> with(dat,text(us ~ netflix, data=dat, text=as.character(1:(length(dat)[1]))))
+Warning messages:
+1: In text.default(us ~ netflix, data = dat, text = as.character(1:(length(dat)[1]))) :
+  "data" is not a graphical parameter
+2: In text.default(us ~ netflix, data = dat, text = as.character(1:(length(dat)[1]))) :
+  "text" is not a graphical parameter
+> dat
+   ebert       us  netflix
+1    1.5  5757.05 3.038462
+2    3.0 12932.23 3.333333
+3    3.0 12823.20 4.050000
+4    3.0 20410.90 3.028455
+5    3.0 14401.00 3.470588
+6    3.5 36280.78 4.118638
+7    3.0 31754.45 3.435527
+8    1.0 28789.47 3.613232
+9    1.5 30050.57 3.517375
+10   3.5 32389.06 3.751269
+11   3.5 34199.73 3.884228
+12   4.0 34146.65 4.120973
+13   3.0 33206.64 3.690669
+14   3.0 35116.79 3.701645
+15   2.5 35563.00 3.893999
+16   3.5 35719.61 3.950258
+17   4.0 35121.37 3.554306
+18   3.0 35062.52 3.762006
+19   3.0 35453.46 4.278783
+20   3.0 35326.03 3.825008
+21   2.0 36194.99 4.028822
+22   3.0 36366.59 4.196764
+23   3.0 36373.61 4.072337
+24   3.0 36404.52 3.981769
+25   3.5 36439.99 4.594997
+26   3.5 36460.07 4.316052
+27   4.0 36664.54 4.518259
+28   4.0 36743.75 4.195499
+> with(dat,text(us ~ netflix, data=dat, text=as.character(1:(dim(dat)[1]))))
+Warning messages:
+1: In text.default(us ~ netflix, data = dat, text = as.character(1:(dim(dat)[1]))) :
+  "data" is not a graphical parameter
+2: In text.default(us ~ netflix, data = dat, text = as.character(1:(dim(dat)[1]))) :
+  "text" is not a graphical parameter
+> with(dat,text(us ~ netflix, as.character(1:(dim(dat)[1]))))
+> plot(us ~ netflix, data=dat, type="n")
+> with(dat,text(us ~ netflix, as.character(1:(dim(dat)[1]))))
+> plot(us ~ netflix, data=dat)
+> plot(ebert ~ netflix, data=dat)
+> plot(factor(ebert) ~ netflix, data=dat)
+> plot(netflix ~ factor(ebert), data=dat)
+> plot(us ~ factor(ebert), data=dat)
+> plot(1/us ~ factor(ebert), data=dat)
+> plot(log(-us) ~ factor(ebert), data=dat)
+Error in plot.window(xlim = xlim, ylim = ylim, log = log, yaxs = pars$yaxs) : 
+  need finite 'ylim' values
+In addition: Warning messages:
+1: In log(-us) : NaNs produced
+2: In min(x) : no non-missing arguments to min; returning Inf
+3: In max(x) : no non-missing arguments to max; returning -Inf
+> plot(log(us) ~ factor(ebert), data=dat)
+> plot(us ~ factor(ebert), data=dat)
+> dat$us
+ [1]  5757.05 12932.23 12823.20 20410.90 14401.00 36280.78 31754.45
+ [8] 28789.47 30050.57 32389.06 34199.73 34146.65 33206.64 35116.79
+[15] 35563.00 35719.61 35121.37 35062.52 35453.46 35326.03 36194.99
+[22] 36366.59 36373.61 36404.52 36439.99 36460.07 36664.54 36743.75
+> (1:(dim(dat)[1])
++ )
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+[24] 24 25 26 27 28
+> (1:(dim(dat)[1]))
+ [1]  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
+[24] 24 25 26 27 28
+> (1:(dim(dat)[1]))[order(dat$us)]
+ [1]  1  3  2  5  4  8  9  7 10 13 12 11 18 14 17 20 19 15 16 21  6 22 23
+[24] 24 25 26 27 28
+> us[(1:(dim(dat)[1]))[order(dat$us)]]
+Error: object "us" not found
+> dat$us[(1:(dim(dat)[1]))[order(dat$us)]]
+ [1]  5757.05 12823.20 12932.23 14401.00 20410.90 28789.47 30050.57
+ [8] 31754.45 32389.06 33206.64 34146.65 34199.73 35062.52 35116.79
+[15] 35121.37 35326.03 35453.46 35563.00 35719.61 36194.99 36280.78
+[22] 36366.59 36373.61 36404.52 36439.99 36460.07 36664.54 36743.75
+> (1:(dim(dat)[1]))[order(dat$us)]
+ [1]  1  3  2  5  4  8  9  7 10 13 12 11 18 14 17 20 19 15 16 21  6 22 23
+[24] 24 25 26 27 28
+> dat$us.ranks <- (1:(dim(dat)[1]))[order(dat$us)]
+> plot(us.ranks ~ ranks, data=dat)
+Error in eval(expr, envir, enclos) : object "ranks" not found
+> plot(us.ranks ~ us, data=dat)
+> plot(ebert ~ us, data=dat)
+> plot(ebert ~ netflix, data=dat)
+> plot(ebert ~ us, data=dat)
+> abline(lm(ebert ~ us, data=dat))
+> plot(ebert ~ netflix, data=dat)
+> abline(lm(ebert ~ netflix, data=dat))
+> lm(ebert ~ netflix, data=dat)
+
+Call:
+lm(formula = ebert ~ netflix, data = dat)
+
+Coefficients:
+(Intercept)      netflix  
+    -0.4289       0.8942  
+
+> summary(lm(ebert ~ netflix, data=dat))
+
+Call:
+lm(formula = ebert ~ netflix, data = dat)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-1.80219 -0.24056  0.09403  0.40934  1.25050 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)  
+(Intercept)  -0.4289     1.2827  -0.334   0.7408  
+netflix       0.8942     0.3311   2.701   0.0120 *
+---
+Signif. codes:  0 Ô***Õ 0.001 Ô**Õ 0.01 Ô*Õ 0.05 Ô.Õ 0.1 Ô Õ 1 
+
+Residual standard error: 0.6766 on 26 degrees of freedom
+Multiple R-squared: 0.2191,	Adjusted R-squared: 0.189 
+F-statistic: 7.293 on 1 and 26 DF,  p-value: 0.01202 
+
+> summary(lm(ebert ~ us, data=dat))
+
+Call:
+lm(formula = ebert ~ us, data = dat)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-1.9492 -0.1919  0.1305  0.4546  0.8792 
+
+Coefficients:
+             Estimate Std. Error t value Pr(>|t|)    
+(Intercept) 2.027e+00  4.956e-01   4.090  0.00037 ***
+us          3.203e-05  1.543e-05   2.077  0.04787 *  
+---
+Signif. codes:  0 Ô***Õ 0.001 Ô**Õ 0.01 Ô*Õ 0.05 Ô.Õ 0.1 Ô Õ 1 
+
+Residual standard error: 0.7091 on 26 degrees of freedom
+Multiple R-squared: 0.1423,	Adjusted R-squared: 0.1093 
+F-statistic: 4.312 on 1 and 26 DF,  p-value: 0.04787 
+
+> summary(lm(ebert ~ netflix + us, data=dat))
+
+Call:
+lm(formula = ebert ~ netflix + us, data = dat)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-1.8170 -0.2600  0.0640  0.4342  1.1582 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)
+(Intercept) -1.559e-01  1.392e+00  -0.112    0.912
+netflix      7.370e-01  4.412e-01   1.670    0.107
+us           1.077e-05  1.961e-05   0.549    0.588
+
+Residual standard error: 0.6859 on 25 degrees of freedom
+Multiple R-squared: 0.2284,	Adjusted R-squared: 0.1666 
+F-statistic: 3.699 on 2 and 25 DF,  p-value: 0.03914 
+
+> summary(lm(factor(ebert) ~ netflix + us, data=dat))
+Error in storage.mode(y) <- "double" : 
+  invalid to change the storage mode of a factor
+In addition: Warning message:
+In model.response(mf, "numeric") :
+  using type="numeric" with a factor response will be ignored
+> dat$ebert.vgood <- dat$ebert > 3
+> lm(ebert.vgood ~ netflix, data=dat)
+
+Call:
+lm(formula = ebert.vgood ~ netflix, data = dat)
+
+Coefficients:
+(Intercept)      netflix  
+    -1.9143       0.5893  
+
+> summary(lm(ebert.vgood ~ netflix, data=dat))
+
+Call:
+lm(formula = ebert.vgood ~ netflix, data = dat)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.6072 -0.3500 -0.1206  0.3886  0.8197 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)  
+(Intercept)  -1.9143     0.8296  -2.308   0.0292 *
+netflix       0.5893     0.2142   2.752   0.0107 *
+---
+Signif. codes:  0 Ô***Õ 0.001 Ô**Õ 0.01 Ô*Õ 0.05 Ô.Õ 0.1 Ô Õ 1 
+
+Residual standard error: 0.4376 on 26 degrees of freedom
+Multiple R-squared: 0.2256,	Adjusted R-squared: 0.1958 
+F-statistic: 7.572 on 1 and 26 DF,  p-value: 0.01066 
+
+> summary(lm(ebert.vgood ~ us, data=dat))
+
+Call:
+lm(formula = ebert.vgood ~ us, data = dat)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.47318 -0.44698 -0.07018  0.52574  0.61199 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)  
+(Intercept) -2.990e-01  3.208e-01  -0.932   0.3599  
+us           2.121e-05  9.985e-06   2.124   0.0433 *
+---
+Signif. codes:  0 Ô***Õ 0.001 Ô**Õ 0.01 Ô*Õ 0.05 Ô.Õ 0.1 Ô Õ 1 
+
+Residual standard error: 0.459 on 26 degrees of freedom
+Multiple R-squared: 0.1479,	Adjusted R-squared: 0.1151 
+F-statistic: 4.513 on 1 and 26 DF,  p-value: 0.04331 
+
+> summary(lm(ebert.vgood ~ netflix + us, data=dat))
+
+Call:
+lm(formula = ebert.vgood ~ netflix + us, data = dat)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-0.5950 -0.3506 -0.1061  0.3937  0.7574 
+
+Coefficients:
+              Estimate Std. Error t value Pr(>|t|)  
+(Intercept) -1.730e+00  8.998e-01  -1.923    0.066 .
+netflix      4.831e-01  2.852e-01   1.694    0.103  
+us           7.276e-06  1.268e-05   0.574    0.571  
+---
+Signif. codes:  0 Ô***Õ 0.001 Ô**Õ 0.01 Ô*Õ 0.05 Ô.Õ 0.1 Ô Õ 1 
+
+Residual standard error: 0.4433 on 25 degrees of freedom
+Multiple R-squared: 0.2356,	Adjusted R-squared: 0.1745 
+F-statistic: 3.853 on 2 and 25 DF,  p-value: 0.03478 
+
+> plot(us ~ netflix, data=dat, subset=ebert==3)
+> plot(us ~ netflix, data=dat, subset=ebert==3.5)
+> plot(exp(us/100) ~ netflix, data=dat, subset=ebert==3.5)
+> plot(exp(us/10000) ~ netflix, data=dat, subset=ebert==3.5)
+> plot(us ~ netflix, data=dat, subset=ebert==3.5)
+> dat$us <- dat$us - mean(dat$us)
+> plot(us ~ netflix, data=dat, subset=ebert==3.5)
+> plot(us ~ netflix, data=dat)
+> dat$us <- dat$us / sd(dat$us)
+> plot(us ~ netflix, data=dat)
+> plot(exp(us) ~ netflix, data=dat)
+> plot(us^3 ~ netflix, data=dat)
+> plot(exp(us) ~ netflix, data=dat)
+> plot(us ~ netflix, data=dat)
+> plot(us ~ ebert, data=dat)
+> plot(exp(us) ~ ebert, data=dat)
+> summary(lm(ebert.vgood ~ netflix + exp(us), data=dat))
+
+Call:
+lm(formula = ebert.vgood ~ netflix + exp(us), data = dat)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-0.58765 -0.35462 -0.09492  0.38420  0.74639 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)
+(Intercept)  -1.5356     1.0708  -1.434    0.164
+netflix       0.4513     0.3249   1.389    0.177
+exp(us)       0.1154     0.2021   0.571    0.573
+
+Residual standard error: 0.4434 on 25 degrees of freedom
+Multiple R-squared: 0.2355,	Adjusted R-squared: 0.1744 
+F-statistic: 3.851 on 2 and 25 DF,  p-value: 0.03484 
+
+> summary(lm(ebert.vgood ~ exp(us), data=dat))
+
+Call:
+lm(formula = ebert.vgood ~ exp(us), data = dat)
+
+Residuals:
+       Min         1Q     Median         3Q        Max 
+-0.5280721 -0.4496659 -0.0006465  0.4684806  0.6914893 
+
+Coefficients:
+            Estimate Std. Error t value Pr(>|t|)  
+(Intercept) -0.07372    0.20146  -0.366    0.717  
+exp(us)      0.32426    0.13736   2.361    0.026 *
+---
+Signif. codes:  0 Ô***Õ 0.001 Ô**Õ 0.01 Ô*Õ 0.05 Ô.Õ 0.1 Ô Õ 1 
+
+Residual standard error: 0.4512 on 26 degrees of freedom
+Multiple R-squared: 0.1765,	Adjusted R-squared: 0.1448 
+F-statistic: 5.573 on 1 and 26 DF,  p-value: 0.02602 
+
+> install.packages("e1071")
+trying URL 'http://lib.stat.cmu.edu/R/CRAN/bin/macosx/universal/contrib/2.8/e1071_1.5-19.tgz'
+Content type 'application/x-gzip' length 474743 bytes (463 Kb)
+opened URL
+==================================================
+downloaded 463 Kb
+
+
+The downloaded packages are in
+	/tmp/RtmplsMNgj/downloaded_packages
+> library(e1071)
+Loading required package: class
+Warning message:
+package 'e1071' was built under R version 2.8.1 
+> ?tune.svm
+> obj <- tune.svm(ebert ~ us + netflix, data=dat, gamma=2^(-2:2), cost=2^(-2:2))
+> plot(obj)
+> obj <- tune.svm(ebert ~ us + netflix, data=dat, gamma=2^(0:4), cost=2^(0:4))
+> plot(obj)
+> obj <- tune.svm(ebert ~ us + netflix, data=dat, gamma=2^(-1:3), cost=1.5^(0:6))
+> plot(obj)
+> obj <- tune.svm(ebert ~ us + netflix, data=dat, gamma=1.5^(-2:2), cost=1.4^(0:8))
+> plot(obj)
+> fsvm1 <- svm(ebert ~ us + netflix, data=dat, gamma=1.5, cost=15)
+> plot(predict(fsvm1, data=dat) ~ fsvm$ebert)
+Error in eval(expr, envir, enclos) : object "fsvm" not found
+> plot(predict(fsvm1, data=dat) ~ dat$ebert)
+> abline(0,1)
+> RMSEP(fsvm1)
+Error: could not find function "RMSEP"
+> ?svm
+> rmsep <- function(x) sqrt(mean((predict(x, data=dat) - dat$ebert)^2))
+> rmsep(fsvm1)
+[1] 0.317538
+> lm.us <- lm(ebert ~ us, data=dat)
+> rmsep(lm.us)
+[1] 0.683296
+> lm.netflix <- lm(ebert ~ netflix, data=dat)
+> rmsep(lm.netflix)
+[1] 0.651987
+> lm.both <- lm(ebert ~ netflix + us, data=dat)
+> rmsep(lm.both)
+[1] 0.6480895
+> lm.both.exp <- lm(ebert ~ netflix + exp(us), data=dat)
+> rmsep(lm.both.exp)
+[1] 0.6458858
+> rmsep(fsvm1)
+[1] 0.317538
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-2:2), cost=1.4^(0:8))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=2^(-3:3), cost=2^(-3:3))
+> plot(obj)
+> fsvm.netflix <- svm(ebert ~ netflix, data=dat, gamma=1, cost=1)
+> rmsep(fsvm.netflix)
+[1] 0.6873265
+> obj <- tune.svm(ebert ~ us, data=dat, gamma=2^(-3:3), cost=2^(-3:3))
+> plot(obj)
+> obj <- tune.svm(ebert ~ us, data=dat, gamma=1.5^(0:5), cost=1.5^(0:5))
+> plot(obj)
+> obj <- tune.svm(ebert ~ us, data=dat, gamma=3^(0:5), cost=3^(0:5))
+> plot(obj)
+> obj <- tune.svm(ebert ~ us, data=dat, gamma=2^(0:6), cost=2^(0:6))
+> plot(obj)
+> obj <- tune.svm(ebert ~ us, data=dat, gamma=2^(0:5), cost=2^(0:5))
+> plot(obj)
+> fsvm.us <- svm(ebert ~ us, data=dat, gamma=16, cost=12)
+> rmsep(fsvm.us)
+[1] 0.3827329
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=2^(-3:3), cost=2^(-3:3))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-3:2), cost=1.5^(-3:2))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-4:1), cost=1.5^(-4:1))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-5:0), cost=2^(-4:1))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-7:-1), cost=2^(-4:2))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-7:-2), cost=2^(-4:3))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-8:-4), cost=2^(-3:4))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-10:-5), cost=2^(-4:2))
+> plot(obj)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-12:-7), cost=2^(-4:2))
+> plot(obj)
+> ?plot.tune
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-12:-7), cost=2^(-4:2), x.transform=log, y.transform=log)
+> plot(obj, x.transform=log, y.transform=log)
+Warning messages:
+1: In title(...) : "x.transform" is not a graphical parameter
+2: In title(...) : "y.transform" is not a graphical parameter
+> ?plot.tune
+> plot(obj, transform.x=log, transform.y=log)
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-12:-7), cost=2^(-1,6))
+Error: syntax error
+> obj <- tune.svm(ebert ~ netflix, data=dat, gamma=1.5^(-12:-7), cost=2^(-1:6))
+> plot(obj, transform.x=log, transform.y=log)
+> plot(obj)
+> fsvm.netflix <- svm(ebert ~ netflix, data=dat, gamma=0.01, cost=8)
+> rmsep(fsvm.netflix)
+[1] 0.6889777
+> rmsep(fsvm1)
+[1] 0.317538
+> rmsep(fsvm.us)
+[1] 0.3827329
+> rmsep(fsvm.netflix)
+[1] 0.6889777
+> rmsep(fsvm1)
+[1] 0.317538
+> 

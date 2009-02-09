@@ -1,0 +1,18 @@
+Columns: Roger Ebert's review, our assigned score, average Netflix rating.
+
+(In once case, Ebert's review is replaced with a 4, because he didn't
+review the movie, but he wrote an article about it as a "great movie")
+
+Vote = rating >= 4 stars.  Popularity = total number of votes.
+
+Methodology: Clustered my jan29 extraction of Netflix data (see
+review.extraction_log).  Scored the whole data set with -p = 0.65,
+penalizing movies for having too many votes (this was not intentional --
+Oops!).  Ran recovery with a popularity reduction of 0.06 (score = score
+/ pop^0.06).  Selected the top ten movies, a random ten of the top 100,
+1000 and 10000, each.  Removed duplicates, looked up Ebert's ratings.
+
+Dan analyzed the data in R.  Using SVM-based predictors, he was able to
+get an RMSE of 0.69 from the Netflix average, 0.38 from our analysis,
+and 0.32 from the combination.  We didn't do cross-validation, though we
+really ought to.
