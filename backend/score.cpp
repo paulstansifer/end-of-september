@@ -64,6 +64,9 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     for(int i = 0; i <= max_cluster; i++)
       clustered_votes[i] = 0;
 
+    //double total_proportional_votes = 0.0;
+    int effective_clusters = 0;
+
     int raw_score = 0;
     //count votes for this article, in bins by cluster
     for(int voter = 1; voter <= votes.nrows(); voter++) {
@@ -76,11 +79,30 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     double total_value = 0;
     for(int i = 1; i <= max_cluster; i++) {
       if(cluster_sizes[i] < 5) continue; //too extreme (HACK)
-      cscores[i] = clustered_votes[i] ; // / pow((double)cluster_sizes[i], 0.75);
+      effective_clusters++;
+      cscores[i] = clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
+      //total_proportional_votes += clustered_votes[i] / cluster_sizes[i];
 
-      total_value += clustered_votes[i] ; // / pow((double)cluster_sizes[i], 0.75);
+      total_value += clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
     }
+
+    /*
+    const double ave_proportional_votes = total_proportional_votes / effective_clusters;
+
+    
+    int total_overreach = 0;
+    for(int i = 1; i <= max_cluster; i++) {
+      if(cluster_sizes[i] < 5) continue;
+      const int overreach = int(clustered_votes[i] - cluster_sizes[i] * ave_proportional_votes);
+      if(overreach > 0) {
+        total_overreach += overreach;
+      }
+      }*/
+
+    // double penalty = pow(total_overreach, popularity_reduction) + 1;
+    double orig_total_value = total_value;
     total_value /= pow(raw_score, popularity_reduction);
+    //total_value /= penalty;
 
     if(total_value > top_score) {
       top_score = total_value;
@@ -91,15 +113,16 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
       rawest_article = article;
     }
     if(total_value > 0) {
-      printf("%07.3f %04d %d ", total_value, raw_score, article);
-      for(int i = 1; i <= max_cluster; i++) {
+      printf("%.4f %04d %d ", total_value, raw_score, article);
+      //printf("%d %.2f ", total_overreach, penalty);
+      /*for(int i = 1; i <= max_cluster; i++) {
         printf("%.2f ", cscores[i]);
-      }
+        }*/
       printf("\n");
     }
   }
-  printf("%.3f %d\n", top_score, best_article);
-  printf("%d %d\n", top_raw, rawest_article);
+  printf("#top score: %.3f %d\n", top_score, best_article);
+  printf("#top raw score: %d %d\n", top_raw, rawest_article);
 
 }
 
@@ -109,10 +132,10 @@ int main(int argc, char* argv[]) {
   Matrix cluster_assignments;
   Matrix votes;
 
-  fprintf(stderr, "#command: \"");
+  printf("#command: \"");
   for(int i = 0; i < argc; i++)
-    fprintf(stderr, "%s ", argv[i]);
-  fprintf(stderr, "\"\n");
+    printf("%s ", argv[i]);
+  printf("\"\n");
 
 
   for(int i = 1; i < argc; i++) {

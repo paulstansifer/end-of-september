@@ -1,0 +1,95 @@
+#We've selected movies from  http://apps.metacritic.com/search/process.shtml?page=3&sid=MTIzNDU5MTk3MTk3NC44NjI0MDY*&metascore_s=50&ts=the&release_date_s=&release_date_e=01%2F01%2F2003&metascore_e=&y=0&ty=1&x=0&sb=2&tfs=movie_all
+
+#netflix_id ebert_rating ebert_great metacritic_score title (year)
+
+11882 - 0 74 Sabrina (1954)
+5601 4 1 94 The Manchurian Candidate (1962)
+5515 4 1 96 Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb (1964)
+5287 4 1 81 Bonnie and Clyde (1967)
+15922 3 0 77 The Graduate (1967)
+11165 4 1 86 2001: A Space Odyssey (1968)
+15496 4 1 86 Easy Rider (1969)
+14280 2.5 0 58 Butch Cassidy and the Sundance Kid (1969)
+- 4 - 79 M*A*S*H (1970)
+6117 - 1 91 Patton (1970)
+9037 4 0 84 Love Story (1970)
+14525 4 0 63 Little Big Man (1970)
+10451 2 0 78 A Clockwork Orange (1971)
+11907 3.5 0 80 Cabaret (1972)
+12293 4 1 100 The Godfather (1972)
+8131 4 1 86 The Conversation (1974)
+13082 4 1 86 Chinatown (1974)
+9368 2 0 75 The Texas Chainsaw Massacre (1974)
+3290 4 1 71 The Godfather: Part II (1974)
+798 4 1 79 Jaws (1975)
+8327 3 1 79 One Flew Over the Cuckoo's Nest (1975)
+16265 4 1 91 Star Wars: Episode IV: A New Hope (1977)
+5946 3.5 1 77 Saturday Night Fever (1977)
+15062 3 0 70 Grease (1978)
+12605 4 0 82 National Lampoon's Animal House (1978)
+199 4 0 73 The Deer Hunter (1978)
+1066 4 0 88 Superman: The Movie (1978)
+4072 - 0 68 Hair (1979)
+9598 3.5 1 82 Manhattan (1979)
+16567 3.5 0 67 The Muppet Movie (1979)
+13481 4 0 79 The Black Stallion (1979)
+13384 4 0 77 Kramer vs. Kramer (1979)
+5582 4 0 78 The Empire Strikes Back (1980)
+12034 - 1 61 The Shining (1980)
+13856 4 1 92 Raging Bull (1980)
+- 3 0 63 Flash Gordon (1980)
+16864 2 0 60 Scanners (1981)
+10042 4 1 90 Raiders of the Lost Ark (1981)
+6849 - 0 65 Gallipoli (1981)
+14624 - 1 78 Body Heat (1981)
+
+# http://en.wikipedia.org/wiki/1986_in_film
+# Top ten grossing films
+
+7624 2.5 0 - Top Gun
+10344 2 0 - Crocodile Dundee
+9426 4 0 - Platoon
+4867 - 0 - The Karate Kid Part II
+5656 3.5 0 - Star Trek IV: The Voyage Home
+2757 3 0 - Back to School
+1625 3.5 0 - Aliens
+4740 3 0 - The Golden Child
+15445 3.5 0 - Ruthless People
+6971 3 0 - Ferris Bueller's Day Off
+
+#...and for the 1980s as a whole:
+
+17328 4 1 - E.T. The Extra-Terrestrial
+9628 4 0 52 Star Wars Episode VI: Return of the Jedi
+5582 4 0 78 Star Wars Episode V: The Empire Strikes Back
+14670 2 0 66 Batman (1989)
+#dup 10042 Raiders of the Lost Ark
+17560 3.5 0 - Ghostbusters
+1744 2.5 0 - Beverly Hills Cop
+10820 3.5 0 - Back to the Future
+16959 3.5 0 65 Indiana Jones and the Last Crusade
+11781 4 0 - Indiana Jones and the Temple of Doom
+
+# Academy Awards for Best Director (1980s and 1990s):
+
+- 3.5 0 - Reds
+4633 4 0 - Gandhi
+13393 4 0 79 Terms of Endearment
+15758 4 1 93 Amadeus
+5137 4 0 - Out of Africa
+#dup Platoon
+10734 4 0 76 The Last Emperor
+4640 3.5 0 65 Rain Man
+15540 4 0 75 Born on the Fourth of July
+4545 4 0 72 Dances with Wolves
+
+2862 3.5 1 84 The Silence of the Lambs
+16604 - 1 82 Unforgiven
+12870 4 1 93 Schindler's List
+11283 4 0 82 Forrest Gump
+2782 3.5 0 66 Braveheart
+3148 4 0 87 The English Patient
+9962 4 0 74 Titanic
+17157 4 0 90 Saving Private Ryan
+571 4 0 86 American Beauty
+15394 4 0 86 Traffic (2001)
