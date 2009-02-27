@@ -11,7 +11,7 @@ cd frontend/
 
 # Start something
 if [ "$1" = "tg" ]; then
-    python terminalgray.py;
+    python2.5 terminalgray.py;
 else
-    python graypages.py;
+    python2.5 graypages.py;
 fi;

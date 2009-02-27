@@ -93,3 +93,54 @@
 17157 4 0 90 Saving Private Ryan
 571 4 0 86 American Beauty
 15394 4 0 86 Traffic (2001)
+
+#Top-grossing, 1983
+
+#Return of the Jedi
+#Terms of Endearment
+9950 1.5 0 35 Flashdance
+5787 3.5 0 66 Trading Places
+3650 4 0 - War Games
+- - - - Octopussy
+8507 3 0 - Sudden Impact
+11496 1 0 17 Staying Alive
+13217 2 0 - Mr. Mom
+
+#Top-grossing, 1989
+
+#Batman
+#Indiana Jones and the Last Crusade
+12435 3.5 0 70 Lethal Weapon 2
+2594 3 0 51 Look Who's Talking
+11176 2 0 - Honey, I Shrunk the Kids
+4956 3 0 - Back to the Future Part II
+17714 4 0 - The Little Mermaid
+7364 4 0 - Driving Miss Daisy
+268 4 0 82 Parenthood
+14928 2 0 79 Dead Poets Society
+
+#Top-grossing, 1992
+
+2290 3 0 - Aladdin
+2400 2 0 - Home Alone 2: Lost in New York
+9265 2 0 - Batman Returns
+3610 3 0 36 Lethal Weapon 3
+16668 2.5 0 62 A Few Good Men
+6386 2.5 0 - Sister Act
+4883 3 0 - The Bodyguard
+2470 3 0 53 Wayne's World
+13705 2 0 34 Basic Instict
+11490 3 0 - A League of Their Own
+
+#Top-grossing, 1995
+
+13673 4 0 92 Toy Story
+14203 2.5 0 51 Batman Forever
+7745 4 0 77 Apollo 13
+3414 3 0 58 Pocahontas
+295 - - 45 Ace Ventura: When Nature Calls
+16552 3 0 65 GoldenEye
+15078 1.5 0 39 Jumanji
+1518 3 0 - Casper
+8596 3.5 0 65 Se7en
+14590 3 0 58 Die Hard With A Vengence

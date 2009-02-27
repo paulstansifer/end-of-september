@@ -64,7 +64,7 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     for(int i = 0; i <= max_cluster; i++)
       clustered_votes[i] = 0;
 
-    //double total_proportional_votes = 0.0;
+    double total_proportional_votes = 0.0;
     int effective_clusters = 0;
 
     int raw_score = 0;
@@ -81,12 +81,12 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
       if(cluster_sizes[i] < 5) continue; //too extreme (HACK)
       effective_clusters++;
       cscores[i] = clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
-      //total_proportional_votes += clustered_votes[i] / cluster_sizes[i];
+      total_proportional_votes += clustered_votes[i] / cluster_sizes[i];
 
       total_value += clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
     }
 
-    /*
+    
     const double ave_proportional_votes = total_proportional_votes / effective_clusters;
 
     
@@ -97,12 +97,12 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
       if(overreach > 0) {
         total_overreach += overreach;
       }
-      }*/
+    }
 
-    // double penalty = pow(total_overreach, popularity_reduction) + 1;
-    double orig_total_value = total_value;
-    total_value /= pow(raw_score, popularity_reduction);
-    //total_value /= penalty;
+    double penalty = pow(total_overreach, popularity_reduction) + 1;
+    //double orig_total_value = total_value;
+    //total_value /= pow(raw_score, popularity_reduction);
+    total_value /= penalty;
 
     if(total_value > top_score) {
       top_score = total_value;
@@ -114,7 +114,7 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     }
     if(total_value > 0) {
       printf("%.4f %04d %d ", total_value, raw_score, article);
-      //printf("%d %.2f ", total_overreach, penalty);
+      printf("%d %.2f ", total_overreach, penalty);
       /*for(int i = 1; i <= max_cluster; i++) {
         printf("%.2f ", cscores[i]);
         }*/

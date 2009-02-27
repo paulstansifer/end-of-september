@@ -36,7 +36,7 @@ for(<SCORES>) {
   if(/^([0-9.]+)\s+[0-9]+\s+(\d+)/) {
     $n = $yn{$2}; #The netflix id of the movie
     $n =~ s/ /_/g;
-    $score = sprintf("%.2f", ($1 / $popularity{$n} ** 0.05) * 100000);
+    $score = sprintf("%.2f", ($1 / $popularity{$n} ** 0.25) * 1000);
     print "$score $n $avg_scores{$n} $popularity{$n}  $title{$n} $_\n";
   } else {
     print "$_\n";
