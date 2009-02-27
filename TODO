@@ -1,0 +1,3 @@
+* Deal with XSRF: http://www.codinghorror.com/blog/archives/001171.html
+* Make a sitemap: http://www.codinghorror.com/blog/archives/001174.html
+* Verify that we're safe against XSS.  There are weird syntactic tricks attackers use!
