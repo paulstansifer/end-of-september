@@ -1,9 +1,11 @@
 #we always have to run this twice to make it work -- why?
+require(SparseM)
 require(e1071)
 require(igraph)
 require(cluster)
 
-loc <- "/Users/paul/Desktop/netflix/ex/jan29"
+
+loc <- "/Users/paul/Desktop/netflix/ex/mar11"
 
 d <- 9
 small.distance <- 0.1

@@ -4,6 +4,8 @@ open(TITLE_MAP, "<", $ARGV[1]);
 open(AVG_SCORES, "<", $ARGV[2]);
 open(SCORES, "<", $ARGV[3]);
 
+$pop_penalty = $ARGV[4];
+
 print "#command: $0 @ARGV\n";
 
 my %yn;
@@ -33,10 +35,10 @@ for(<AVG_SCORES>) {
 
 for(<SCORES>) {
   chomp;
-  if(/^([0-9.]+)\s+[0-9]+\s+(\d+)/) {
+  if(/^([0-9.]+)\s+(\d+)/) {
     $n = $yn{$2}; #The netflix id of the movie
     $n =~ s/ /_/g;
-    $score = sprintf("%.2f", ($1 / $popularity{$n} ** 0.0) * 1000);
+    $score = sprintf("%.2f", ($1 / $popularity{$n} ** $pop_penalty) * 1000);
     print "$score $n $avg_scores{$n} $popularity{$n}  $title{$n} $_\n";
   } else {
     print "$_\n";

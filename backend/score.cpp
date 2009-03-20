@@ -79,30 +79,31 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
     double total_value = 0;
     for(int i = 1; i <= max_cluster; i++) {
       if(cluster_sizes[i] < 5) continue; //too extreme (HACK)
+
       effective_clusters++;
       cscores[i] = clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
       total_proportional_votes += clustered_votes[i] / cluster_sizes[i];
 
       total_value += clustered_votes[i] / pow((double)cluster_sizes[i], 0.75);
     }
-
     
     const double ave_proportional_votes = total_proportional_votes / effective_clusters;
-
     
     int total_overreach = 0;
+    int abs_overreach = 0;
     for(int i = 1; i <= max_cluster; i++) {
       if(cluster_sizes[i] < 5) continue;
       const int overreach = int(clustered_votes[i] - cluster_sizes[i] * ave_proportional_votes);
       if(overreach > 0) {
         total_overreach += overreach;
       }
+      abs_overreach += abs(overreach);
     }
 
     double penalty = pow(total_overreach, popularity_reduction) + 1;
     //double orig_total_value = total_value;
     //total_value /= pow(raw_score, popularity_reduction);
-    total_value /= penalty;
+    total_value /= (penalty);
 
     if(total_value > top_score) {
       top_score = total_value;
@@ -113,13 +114,30 @@ void emit_scores(Matrix & cluster_assignments, Matrix & votes) {
       rawest_article = article;
     }
     if(total_value > 0) {
-      printf("%.4f %04d %d ", total_value, raw_score, article);
-      printf("%d %.2f ", total_overreach, penalty);
-      /*for(int i = 1; i <= max_cluster; i++) {
+      printf("%.4f %d ", total_value, article);
+      printf("summary %d %d %.3f ", raw_score, total_overreach, penalty);
+      printf("%d %d ", total_overreach, abs_overreach);
+      printf("%.3f ", ave_proportional_votes);
+      
+      printf("cscores ");
+      for(int i = 1; i <= max_cluster; i++) {
+        if(cluster_sizes[i] < 5) continue; //too extreme (HACK)
         printf("%.2f ", cscores[i]);
-        }*/
+      }
+      printf("avg ");
+      for(int i = 1; i <= max_cluster; i++) {
+        if(cluster_sizes[i] < 5) continue; //too extreme (HACK)
+        printf("%.2f ", 1.0*clustered_votes[i]/cluster_sizes[i]);
+      }
+      printf("votes ");
+      for(int i = 1; i <= max_cluster; i++) {
+        if(cluster_sizes[i] < 5) continue; //too extreme (HACK)
+        printf("%d ", clustered_votes[i]);
+      }
+
       printf("\n");
     }
+
   }
   printf("#top score: %.3f %d\n", top_score, best_article);
   printf("#top raw score: %d %d\n", top_raw, rawest_article);
