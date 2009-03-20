@@ -67,14 +67,14 @@
 17560 3.5 0 - Ghostbusters
 1744 2.5 0 - Beverly Hills Cop
 10820 3.5 0 - Back to the Future
-16959 3.5 0 65 Indiana Jones and the Last Crusade
+16954 3.5 0 65 Indiana Jones and the Last Crusade
 11781 4 0 - Indiana Jones and the Temple of Doom
 
 # Academy Awards for Best Director (1980s and 1990s):
 
 - 3.5 0 - Reds
 4633 4 0 - Gandhi
-13393 4 0 79 Terms of Endearment
+13392 4 0 79 Terms of Endearment
 15758 4 1 93 Amadeus
 5137 4 0 - Out of Africa
 #dup Platoon
@@ -116,7 +116,7 @@
 4956 3 0 - Back to the Future Part II
 17714 4 0 - The Little Mermaid
 7364 4 0 - Driving Miss Daisy
-268 4 0 82 Parenthood
+269 4 0 82 Parenthood
 14928 2 0 79 Dead Poets Society
 
 #Top-grossing, 1992
