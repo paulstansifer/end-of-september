@@ -11,7 +11,6 @@ import web
 
 import state, search
 import online
-from log import *
 
 paragraphs = ['''Lorem ipsum dolor sit amet, consectetuer adipiscing elit.  Curabitur scelerisque lectus. [/Fusce tempor/], mi a adipiscing tempus, lacus augue luctus sapien, ut commodo arcu tortor cursus leo. Nunc tortor ligula, accumsan non, volutpat in, tristique vel, est. Maecenas aliquam tortor ac purus. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.''',
               '''Maecenas ultrices risus ac nunc. Maecenas nonummy. Nunc elit libero, porta et, commodo ut, mollis eu, diam. Maecenas purus tellus, dapibus sed, egestas in, laoreet et, diam. Vestibulum quis leo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Duis tincidunt.''']

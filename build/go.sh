@@ -12,6 +12,8 @@ cd frontend/
 # Start something
 if [ "$1" = "tg" ]; then
     python2.5 terminalgray.py;
+elif [ "$1" = "sf" ]; then
+    python2.5 ../backend/state_filler.py;
 else
     python2.5 graypages.py;
 fi;

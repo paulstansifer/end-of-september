@@ -16,5 +16,13 @@ cd frontend/
 for test in test*.py
 do
     echo "===== $test ====="
-    python $test
+    python2.5 $test
+done
+
+cd ../backend/
+
+for test in test*.py
+do
+    echo "===== $test ====="
+    python2.5 $test
 done

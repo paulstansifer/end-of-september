@@ -7,12 +7,12 @@ from frontend.terminalgray import (
 import frontend.terminalgray
 
 
-terminalgray.init()
+frontend.terminalgray.init()
 
 class TestOperationsFuzzy(unittest.TestCase):
   
   def setUp(self):
-    terminalgray.clear()
+    frontend.terminalgray.clear()
     add_user('ruth')
     add_user('ester')
     add_user('job')

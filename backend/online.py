@@ -2,7 +2,7 @@ from math import sqrt
 #from state import State
 from random import randint, sample
 from datetime import timedelta, datetime
-from log import *
+from frontend.log import *
 import state
 import sys #TMP
 

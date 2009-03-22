@@ -1,11 +1,14 @@
-import xapian
-from reverend.thomas import Bayes
 import math
-import state
 import operator
-from log import *
 import random
 from datetime import timedelta, datetime
+
+import xapian
+from reverend.thomas import Bayes
+
+import state
+from frontend.log import *
+
 
 #Search strategy: For each search term, we cast around nearby clusters
 #for the nearest people to have made such a search before.  We train a
@@ -56,10 +59,14 @@ class Search:
         for word in words:
             ret_val.append(self.stem(word))
         return ret_val
-        
+
+    #exemplars are documents that are well-related to the given search
+    #term, as determined by tagging ("worth the read for"...)
+
     #Term must be normalized and stemmed and everything first
     def get_term_exemplars(self, cid, term):
         popularity = state.the.get_term_popularity(term)
+        
         goal_count = min(int(math.ceil(math.sqrt(popularity)))*2, popularity)
 
 
@@ -130,6 +137,8 @@ class Search:
         #search for the eight best words
         query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:12]] )
 
+        log_tmp("SEARCH: query: " + str(query))
+
         enq = xapian.Enquire(self.mainabase)
         enq.set_query(
 #            xapian.Query(xapian.Query.OP_AND,
@@ -141,6 +150,7 @@ class Search:
 
         results = []
         for m in mset:
+            log_tmp("SEARCH: m: " + str(m))
             doc = m.get_document()
             post = state.the.get_post(int(doc.get_data()), True)
 
@@ -167,7 +177,7 @@ class Search:
         enq.set_query(query)
         mset = enq.get_mset(0, 25)
 
-        log_tmp("SEARCH:FULLTEXT: mset: " + mset)
+        log_tmp("SEARCH:FULLTEXT: mset: " + str(mset))
 
         results = []
         for m in mset:
@@ -185,9 +195,6 @@ class Search:
 
         return results[:10]
         
-        
-    def add_article(self, post, score):
-        self.add_article_contents(post.tokens, post.id, score)
         
     def add_article_contents(self, post_tokens, post_id, score):
         doc = xapian.Document()

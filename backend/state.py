@@ -9,11 +9,12 @@
 # $Id: state.py 100 2008-04-11 00:34:48Z paul $
 
 from datetime import datetime
-import web # Needed for database access
-from log import *
 import re
 import random # Needed for random cluster assignment hack.  Should disappear
 
+import web # Needed for database access
+
+from frontend.log import *
 import search
 
 class DataError(Exception):
@@ -290,7 +291,7 @@ class State:
         return web.query('select count(*) from relevance where term="%s"' % web.sqlquote(term))[0]['count(*)']
 
     def get_term_in_clusters(self, term, clusters):
-        log_tmp("STATE: clusters: %d" % clusters)
+        log_tmp("STATE: clusters: " + str(clusters))
         #It looks like keyword arguments (like those used in web.insert in _vote_())
         #get quoted twice, if used in combination with sqlquote()
         #TODO: force web.py to do it right, rather than matching them
