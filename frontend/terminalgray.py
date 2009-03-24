@@ -52,6 +52,7 @@ def _become(username):
 def get_articles(username, count):
   _become(username)
   s = _get('/users/' + username + '/frontpage?fresh=yes&articles=%d' % count)
+  log_tmp(str(s.articles))
   return [pid_to_epid[a] for a in s.articles]
 
 def get_history(username, batch):
@@ -99,7 +100,6 @@ def dialog():
   import backend.state
   init()
 
-    
   while True:
     cmd = raw_input()
     parts = re.split('\W+', cmd)

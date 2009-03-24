@@ -125,7 +125,7 @@ class Search:
         ]
 
         proportions = [ #knock out the weak and irrelevant ones before sorting
-            (tok, prop) for (tok, prop) in proportions if prop > 1.15 ]
+            (tok, prop) for (tok, prop) in proportions if prop > 2 ]
 
         if len(proportions) < 3:
             pass #TODO revert to fulltext search
@@ -150,7 +150,6 @@ class Search:
 
         results = []
         for m in mset:
-            log_tmp("SEARCH: m: " + str(m))
             doc = m.get_document()
             post = state.the.get_post(int(doc.get_data()), True)
 

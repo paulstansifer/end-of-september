@@ -180,7 +180,10 @@ class State:
                   % (user.current_batch+1, user.id))
 
     def add_to_history(self, uid, pid, batch, position):
+      #TODO: ensure uniqueness better
+      if len(web.select('history', where='uid=%d and pid=%d' % (uid, pid))) == 0:
         web.insert('history', uid=uid, pid=pid, batch=batch, position=position)
+
 
     def get_history(self, uid, batch):
         pids = [s.pid for s in

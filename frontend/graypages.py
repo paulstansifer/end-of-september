@@ -241,10 +241,9 @@ class frontpage(cookie_session, normal_style):
       article_count = 6
     
     posts = online.gather(user, texas)[0:article_count]
-    current_batch = user.current_batch
-    for i in xrange(0, len(posts)):
-      texas.add_to_history(uid, posts[i].id, current_batch, i)
-      content += post_div(posts[i], uid, username)
+    for i, post in enumerate(posts):
+      texas.add_to_history(uid, post.id, user.current_batch, i)
+      content += post_div(post, uid, username)
 
     if len(posts) == 0:
       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
@@ -294,23 +293,23 @@ class compose(cookie_session, normal_style):
 
 class search_results(cookie_session, normal_style):
   def GET(self, username):
-    
-    i = web.input()
-    terms = i.search
+    inp = web.input()
+    terms = inp.search
 
     uid = self.uid_from_cookie(username) #TODO error handling
+    user = texas.get_user(uid)
 
-    if i.local:
-      results = search.local_search(texas.get_user(uid).cid, terms, i.recent)
+    if inp.local:
+      results = search.local_search(user.cid, terms, inp.recent)
     else:
-      results = search.global_search(terms, i.recent)
+      results = search.global_search(terms, inp.recent)
 
     content = ""
-    for result in results:
-      texas.add_to_history(uid, result.post.id)
+    for i, result in enumerate(results):
+      texas.add_to_history(uid, result.post.id, user.current_batch, i)
       content += post_div(result.post, uid, username, result.term, {"score": result.score})
       
-    sidebar = render.search_sidebar(i.local)
+    sidebar = render.search_sidebar(inp.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
     
 class vote(cookie_session):

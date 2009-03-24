@@ -4,7 +4,6 @@ from random import randint, sample
 from datetime import timedelta, datetime
 from frontend.log import *
 import state
-import sys #TMP
 
 #The significance of a groups' vote is proportional to the fifth root of its size
 fifth_roots = {0: 0, 1: 1, 2: 1.149, 3: 1.246, 5: 1.380, 7: 1.475,
@@ -70,11 +69,14 @@ def gather(user, state):
   
   delg_ids = []
 
+  #get around 12 users
   for c in nearby:
-    delg_ids += [d.id for d in state.get_sample_users_in_cluster(c,4)]
+    delg_ids += [d.id for d in
+                 state.get_sample_users_in_cluster(c,12/len(nearby))]
 
   #log_tmp("ONLINE: delegates " + str(delg_ids))
 
+  #get four recent votes per user
   possible_articles = []
   for delg_id in delg_ids:
     #if users' implicit votes for their own articles are not stored

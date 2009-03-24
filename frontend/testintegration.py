@@ -17,9 +17,16 @@ class TestOperationsFuzzy(unittest.TestCase):
     add_user('ester')
     add_user('job')
     add_user('boaz')
-    for x in xrange(0, 20):
-      compose_article('job', x)
-      compose_article('ester', x+250)
+    add_user('sarah')
+    add_user('saul')
+    
+    for x in xrange(0, 4):
+      compose_article('ruth', x)
+      compose_article('ester', x+100)
+      compose_article('job', x+200)
+      compose_article('boaz', x+300)
+      compose_article('sarah', x+400)
+      compose_article('saul', x+500)
     
 
   def test_effacity(self):

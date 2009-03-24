@@ -2,8 +2,6 @@
 
 # Quick and dirty data importer of fake data into State.
 
-# $Id: state_filler.py 100 2008-04-11 00:34:48Z paul $
-
 from datetime import datetime
 from random import randint, sample
 import re
@@ -75,7 +73,7 @@ def populate_state(state):
     line_parser = re.compile(r'(.*)\|(.*)')
 
     print "Reading 'model_output.dat' . . ."
-    for line in file('model_output.dat').readlines():
+    for line in file('../backend/model_output.dat').readlines():
         topic = randint(0,3)
         file_pid, file_uid = line_parser.match(line).groups()
 
