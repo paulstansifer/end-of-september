@@ -18,6 +18,7 @@ urls = ('/favicon.ico', 'favicon',
         '/users/(.+)/frontpage', 'frontpage',
         '/users/(.+)/history/(.+)', 'history',
         '/articles/(.+)/wtr', 'vote',
+        '/articles/(.+)/for/(.+)/wtr', 'vote_term',
         '/articles/(.+)/callout', 'callout',
         '/articles/(.+)', 'article',
         '/users/(.+)/search', 'search_results',
@@ -167,27 +168,32 @@ class cookie_session:
 class default(cookie_session):
   def GET(self):
     uid = self.uid_from_cookie()
-    web.seeother('/users/' + texas.get_user(uid).name + "/frontpage")
+    web.seeother('/users/' + username + "/frontpage")
 
 #render the div a post sits in
 def post_div(post, uid=None, username_already=None, term=None, extras={}, expose=False):
-  pid = post.id
-  if uid != None and texas.voted_for(uid, pid):
-    vote_result = render.vote_result(pid, post.uid, texas.get_user(post.uid).name)
-  else:
-    vote_result = None
-
-  if uid != None and username_already == None:
+  if uid != None  and  username_already == None:
     username = texas.get_user(uid).name
   else:
     username = username_already #save a DB call, if we can
+  
+  pid = post.id
+  if uid != None and texas.voted_for(uid, pid):
+    if term == None or (not any([t == term for t in texas.terms_voted_for(uid,pid)])):
+      extra_term = None
+    else:
+      extra_term = term
+    vote_result = render.vote_result(pid, uid, texas.get_user(post.uid).name, post.uid,
+                                     extra_term)
+  else:
+    vote_result = None
+
 
   info = {'score': post.broad_support, 'id': pid }
   info.update(extras)
   return ('''<div class="post" id="post%d" style="clear: both">
     <a href="javascript:dismiss(%d)" class="dismisser">
-    <img alt="dismiss" src="/static/x-icon.png" /> </a>'''
-          % (pid, pid)
+    <img alt="dismiss" src="/static/x-icon.png" /> </a>''' % (pid, pid)
           + render_post.show(post, vote_result=vote_result,
                              username=username, term=term,
                              extras=info, expose=expose)
@@ -255,7 +261,7 @@ class frontpage(cookie_session, normal_style):
     sidebar = render.ms_sidebar([texas.get_post(wtr) for wtr in texas.recent_votes(uid, 4)])
 
     self.package(sidebar,
-        self.nav_wrap(content, username, current_batch, True, True),
+        self.nav_wrap(content, username, user.current_batch, True, True),
         uid < 10, username, js_files=['citizen.js'])
 
 
@@ -307,24 +313,29 @@ class search_results(cookie_session, normal_style):
     content = ""
     for i, result in enumerate(results):
       texas.add_to_history(uid, result.post.id, user.current_batch, i)
-      content += post_div(result.post, uid, username, result.term, {"score": result.score})
+      content += post_div(result.post, uid, username, terms, {"score": result.score})
       
     sidebar = render.search_sidebar(inp.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
     
 class vote(cookie_session):
   def POST(self, pid_str):
-    pid = int(pid_str)
-    uid = self.uid_from_cookie()
-    texas.vote(uid, pid)
-    author_uid = texas.get_post(pid).uid
-    author_name = texas.get_user(author_uid).name
     i = web.input()
-    if i.has_key('just_result') and i['just_result'] == 'yes':
-      print render.vote_result(texas.get_post(pid), author_name, author_uid)
+    pid = int(pid_str)
+    post = texas.get_post(pid)
+    uid = self.uid_from_cookie()
+    username = texas.get_user(uid).name
+    texas.vote(uid, pid)
+    if i.has_key('term'):
+      texas.add_term(uid, pid, i['term'])
+    
+    author_uid = post.uid
+    author_name = texas.get_user(author_uid).name
+    if i.has_key('ajax'):
+      print render.vote_result(texas.get_post(pid), username, author_name, author_uid, None)
+      #no extra term is possible in the context of just having voted
     else:
-      #TODO: make it so that, without JS, this is actually used
-      print "ok"
+      print "TODO: wrap a simple js-less version"
       #web.seeother('/articles/' + str(pid)) #no JS?  redirect to view the whole article
 
 class callout(cookie_session):

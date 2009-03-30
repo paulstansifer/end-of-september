@@ -62,10 +62,11 @@ function callout(id) {
   //var req = ajax("/articles/"+id+"/callout?text="+escape(txt));
 }
 
-function voteon(id, username) {
+function voteon(id, username, term) {
+  url = $('#wtr'+id).attr('action') + '&ajax=inline';
   $("#status"+id).html('');
   $.ajax({
-    url: '/articles/'+id+'/wtr?just_result=yes',
+    url: url,
     dataType: 'html', type: 'POST',
     success: function(data, textstatus) {
         $('#wtr'+id).hide().html(data).fadeIn('normal');

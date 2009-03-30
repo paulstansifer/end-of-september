@@ -197,18 +197,24 @@ class State:
     def get_random_pids(self, count):
         return [p.id for p in web.select('post', order='rand()', limit='%d' % count)]
 
-    def vote(self, uid, pid, term=None):
+    def vote(self, uid, pid):
         if len(web.select('vote', where='uid=%d and pid=%d' % (uid, pid))) == 0:
             web.insert('vote', uid=uid, pid=pid)
         # otherwise vote already exists -- do nothing
 
-        #TODO: validate term
-        if term != None  and  len(web.select('relevance', where='uid=%d and pid=%d and term=%s' % (uid, pid, web.sqlquote(term)))) == 0:
-            #log_dbg("STATE: vote term: [%s]" % term) #terms are bare
-            web.insert('relevance', uid=uid, pid=pid, term=web.sqlquote(term))
+    def add_term(self, uid, pid, term):
+      #TODO: validate term
+      if len(web.select('relevance', where='uid=%d and pid=%d and term=%s' % (uid, pid, web.sqlquote(term)))) == 0:
+        #log_dbg("STATE: vote term: [%s]" % term) #terms are bare
+        web.insert('relevance', uid=uid, pid=pid, term=web.sqlquote(term))
+
 
     def voted_for(self, uid, pid):
         return len(web.select('vote', where='uid=%d and pid=%d' % (uid, pid))) > 0
+
+    def terms_voted_for(self, uid, pid):
+        return [entry.term for entry in web.query(
+          'select term from relevance where uid=%d and pid=%d' % (uid, pid))]
 
     def update_support(self, pid, support):
         web.update('post', where='id=%d' % pid, broad_support=support)

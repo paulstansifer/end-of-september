@@ -128,14 +128,12 @@ class Search:
             (tok, prop) for (tok, prop) in proportions if prop > 2 ]
 
         if len(proportions) < 3:
-            pass #TODO revert to fulltext search
-
-        proportions.sort(key=operator.itemgetter(1), reverse=True)
-
-        log_tmp("SEARCH: proportions: " + str(proportions))
-
-        #search for the eight best words
-        query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:12]] )
+            query = xapian.Query(xapian.Query.OP_AND, [term])
+        else:
+            proportions.sort(key=operator.itemgetter(1), reverse=True)
+            log_tmp("SEARCH: proportions: " + str(proportions))
+            #search for the twelve best words
+            query = xapian.Query(xapian.Query.OP_OR, [ tok for (tok, prop) in proportions[:12]] )
 
         log_tmp("SEARCH: query: " + str(query))
 
@@ -152,7 +150,6 @@ class Search:
         for m in mset:
             doc = m.get_document()
             post = state.the.get_post(int(doc.get_data()), True)
-
             
             for (pool, prob) in guesser.guess(post.tokens()):
                 if pool == "relevant":
@@ -165,8 +162,6 @@ class Search:
             #results.append( (post, score, "rel: %f  b_s: %f  root age: %f" %
             #                 (rel_prob, post.broad_support, sqrt(age_days)) ) )
         results.sort(lambda x,y: cmp(x.score, y.score), reverse=True)
-        #results.sort(key=operator.itemgetter(1), reverse=True)
-
         return results[:10]
 
     def fulltext(self, cid, term, recent):
@@ -175,8 +170,6 @@ class Search:
         query = xapian.Query(xapian.Query.OP_OR, [term])
         enq.set_query(query)
         mset = enq.get_mset(0, 25)
-
-        log_tmp("SEARCH:FULLTEXT: mset: " + str(mset))
 
         results = []
         for m in mset:

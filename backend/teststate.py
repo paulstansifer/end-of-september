@@ -73,7 +73,8 @@ def seed_state(state):
 
   ids['violence'] = state.create_post(ids['mal'], "Shooting is the solution to this problem.", "---")
   ids['nonviolence'] = state.create_post(ids['wash'], "Can I make a suggestion that doesn't involve violence?", "---")
-  state.vote(ids['jayne'], ids['violence'], "violence")
+  state.vote(ids['jayne'], ids['violence'])
+  state.add_term(ids['jayne'], ids['violence'], "violence")
   state.vote(ids['mal'], ids['nonviolence'])
 
   ids['pants'] = state.create_post(ids['mal'], "Mal needs no pants!", "---")
