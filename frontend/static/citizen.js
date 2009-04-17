@@ -1,8 +1,8 @@
 var inFlight = 0;
 
 $(document).ready(function() {
-    $(".j_content").not(".expose").hide();
-    $(".j_summary").not(".expose").show();
+    $(".j_content").not(".exposed").hide();
+    $(".j_summary").not(".exposed").show();
 
     //$(".dismisser").show();
     //on consideration, what good does this do?  --PS
@@ -36,14 +36,14 @@ var slam_quick = 100;
 function expose(id) { //TODO: support earlier browsers
   $("#summary"+id).slideUp(slam_quick);
   $("#sidebar_summary"+id).slideUp(slam_quick, function() {
-      $("#contents"+id).slideDown("slow");
-      $("#sidebar_contents"+id).slideDown("slow");
+      $("#content"+id).slideDown("slow");
+      $("#sidebar_content"+id).slideDown("slow");
     });
 }
 
 function shrink(id) { //TODO: support earlier browsers
-  $("#sidebar_contents"+id).slideUp("slow");
-  $("#contents"+id).slideUp("slow", function() {
+  $("#sidebar_content"+id).slideUp("slow");
+  $("#content"+id).slideUp("slow", function() {
       $("#summary"+id).slideDown(slam_quick);
       $("#sidebar_summary"+id).slideDown(slam_quick);
     });
@@ -60,6 +60,31 @@ function callout(id) {
     txt = document.selection.createRange().text;
   }
   //var req = ajax("/articles/"+id+"/callout?text="+escape(txt));
+}
+
+function add_recent_wtr() {
+  $('#recentwtr').prepend("<li><a style='display:none' class='listedlink'" 
+    +"href='/articles/...'>"+ "..." + "</a></li>")
+         .children(':first').children(':hidden').fadeIn('slow');
+}
+
+function ajax_replace(id, url, method, status_div/*, callback*/) {
+  $('#'+status_div).html('<em>Working...</em>');
+  $.ajax({
+    url: url, dataType: 'html', type: method,
+    success: function(data, textstatus) {
+        $('#'+id).hide().html(data).fadeIn('normal');
+        $('#'+status_div).html(''); //done!
+        //callback();
+      },
+    error: function(data, textstatus) {
+        if(textstatus == 'timeout') {
+          $('#'+status_div).html('<em>Timeout trying to contact server.</em>');
+        } else {
+          $('#'+status_div).html('<em>Internal error talking to server.</em>');
+        }
+      }
+    })
 }
 
 function voteon(id, username, term) {

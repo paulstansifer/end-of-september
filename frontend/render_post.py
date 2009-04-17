@@ -72,7 +72,7 @@ def show(post, vote_result=None, username=None, term=None, extras={}, expose=Fal
       extras_rendered += "<b>" + k + "</b>: " + str(v) + "<br/>"
 
 
-    return render.post(pid, "expose" if expose else "",
+    return render.post(pid, "exposed" if expose else "",
                        post.claim, callout, content, 
                        render_timedelta(age),
                        extras_rendered, notes_rendered,

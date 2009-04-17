@@ -156,12 +156,20 @@ class State:
         self.search.add_article_contents(tokens, pid, b_s)
         return pid
 
-    #TODO: this laziness system works, but is kinda ugly.  We should fix it.
+
+    
+    class LazyPost:
+      def __init__(self, state, pid):
+        self.state = state
+        self.pid = pid
+      #TODO: some good lazy DB access.
+    #def get_post(self, pid):
+    #  return LazyPost(self, pid)
+
+    #TODO: this laziness system works, but is kinda ugly.  We should fix it, above
     def get_post(self, pid, content=False):
         post = web.select('post', where='id=%d' % pid)
-        
         if len(post) is 0: raise DataError("article with pid %d not found" % pid)
-        
         if content == False:
             return post[0]
 
