@@ -14,19 +14,20 @@ body {
 a {
   text-decoration: none;
   color: Black;
-  padding-left: 2px;
-  padding-right: 2px;
+  padding-left: 1px;
+  padding-right: 1px;
   /*border-top: 1px solid #BBBBBB;*/
   /*border-bottom: 1px dashed #BBBBBB;*/
+  border-left: 2px solid #C8C8C8;
+  border-right: 2px solid #C8C8C8;
+   
   background-color: #D4D4D4;
   /*font-family: "Trebuchet MS", sans-serif;*/
 }
 a.listedlink {
-  font-weight: normal;
-  text-align: left;
 }
 .inlineimg {
-  margin-bottom: -3px;
+  margin-bottom: -4px;
 }
 a:visited {
   background-color: #C6C6C6;
@@ -42,8 +43,8 @@ form {
   /*clear: both; tools is now inside the post float */
 }
 input{
-  border-top: 1px solid #555555;
-  border-left: 1px solid #555555;
+  border-top: 1px solid #777;
+  border-left: 1px solid #777;
   border-right: 1px solid Black;
   border-bottom: 1px solid Black;
   background-color: #D0D0D0;
@@ -53,9 +54,6 @@ input{
        */
   padding: 2px;
   margin: 4px;
-  font-size: 12px;
-  font-family: optima, candara, "Trebuchet MS", georgia, serif;
-   /*font-weight: bold;*/
 }
 .textin{
   border-top: 1px solid Black;
@@ -102,12 +100,33 @@ input[disabled] {
   margin-right: 3px;
 }
 .post {
-  border: 1px dotted #A0A0A0;
+  border-top: 1px dotted #555;
+  border-left: 1px dotted #555;
   padding: 5px;
-  margin-top: 10px;
+  /*margin-top: 10px;*/
+  margin-top: 25px;
   margin-bottom: 10px;
 }
+.post > h2 {
+  /*border: 1px dotted #888;*/
+  font-size: 120%;
+  /*font-weight: normal;*/
+  margin-top: -15px;
+  margin-bottom: 8px;
+}
 
+.posttitle {
+/*
+  border-left: 1px dotted #888;
+  border-right: 1px dotted #888;
+       */
+  background-color: #BBBBBB;
+  padding-left: 4px;
+  padding-right: 4px;
+
+}
+
+    
 .sidebar{
   float:left;
   width:115px;
@@ -170,7 +189,6 @@ li {
 img {border:0;}
 
 h1 { margin-top: 0; margin-bottom: 0px; text-align: left; }
-h2 { font-size: 150%; margin-top: 0; margin-bottom: 0px; text-align: left; }
 h3 { margin-top: 0; margin-bottom: 0px; text-align: left; }
 h5 { margin-top: 0; margin-bottom: 0px; text-align: left; }
 
