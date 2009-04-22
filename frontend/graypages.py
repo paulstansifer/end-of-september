@@ -36,24 +36,20 @@ class Posty: #for mixing in with NormalPage
         with span(css='posttitle'):
           with span(style='font-weight: normal;'): txt("Claim: ")
           txt(post.claim)
-      with div(css='sidebar'):
-        with div(css='sidebarsection'):
-          with div(c_id='sidebar_summary', css='j_summary', expose=expose,
-                   prefix="(", child_sep=" | ", suffix=")"):
-            with js_link(fn=Dummy): txt("expand")
-            with link(service=Dummy): txt("page")
-          with div(c_id='sidebar_content', css='j_content', expose=expose,
-                   prefix="(", child_sep=" | ", suffix=")"):
-            with js_link(fn=Dummy): txt("contract")
-            with link(service=Dummy): txt("page")
-          br()
-          txt(human_friendly.render_timedelta(datetime.now() - post.date_posted))
-          txt(" ago")
-          br()
-        #for k, v in all_extras.items():
-        #  with bold(): txt(k)
-        #  txt(": "); txt(str(v))
-        txt("TODO notes")
+#       with div(css='sidebar'):
+#         with div(style='text-align: center; margin-bottom: 1em;'):
+#           with div(c_id='sidebar_summary', css='j_summary', expose=expose,
+#                    child_sep=" | "):
+#             with js_link(fn=Dummy): txt("expand")
+#             with link(service=Dummy): txt("page")
+#           with div(c_id='sidebar_content', css='j_content', expose=expose,
+#                    child_sep=" | "):
+#             with js_link(fn=Dummy): txt("contract")
+#             with link(service=Dummy): txt("page")
+#         #for k, v in all_extras.items():
+#         #  with bold(): txt(k)
+#         #  txt(": "); txt(str(v))
+#         txt("TODO notes")
       with div(): #post body
         with div(c_id='summary', css='j_summary postbody', expose=expose):
           txt("Fit nasal purse")
@@ -62,7 +58,12 @@ class Posty: #for mixing in with NormalPage
           if self.dc.has_key('uid'):
             with div(c_id='tools', css='tools'):
               if texas.voted_for(self.dc['uid'], post.id):
-                txt("by ")
+                button(service=Dummy, label='Worth the read', replace='tools',
+                       disabled=True)
+                br()
+                txt(human_friendly.render_timedelta(datetime.now()
+                                                    - post.date_posted))
+                txt(" ago "); entity('mdash'); txt(" by ")
                 with link(service=Dummy):
                   img(alt='', src='/static/user.png')
                   texas.get_user(post.uid).name
@@ -97,41 +98,15 @@ urls = []
 texas = state.the
 search = texas.search
 
-class login: #TODO: authenticate.  username or email address required, not both
-  def GET(self):
-    inp = web.input()
-    if not inp.has_key('name'):
-      print "give a name!"
-      return
-    name = inp.name
-    uid = texas.get_uid_from_name(name)
-    web.setcookie('name', name, expires=3600*24*90)
-    ticket = texas.make_ticket(uid)
-    web.setcookie('ticket_for_' + name, ticket, expires=3600*24*90)
-    #web.seeother('/users/' + name + '/frontpage')
-    print '<a href="/users/' + name + '/frontpage">'+name+'</a>'
-  def POST(self):  #TODO: userify
-    inp = web.input()
-    try:
-      texas.create_user(inp.name, inp.pwd, inp.email)
-    except state.DataError, e:
-      print 'Unable to create user:', e
-      return
-    print 'Welcome new user ' + inp.name
-
-#TODO: should _cookie_session_ and _normal_style_ be classes?  I'm
-#starting to think it doesn't really make sense.
-
 class BitBucket:
   def write(self, s): pass
-
 
 #TODO: this iface makes no sense -- the service will need context, so
 #it's silly not to use it to get the username.  Of course, it's also
 #impossible to do so.
 def user_link(username):
   with link(service=Dummy):
-    img(alt='', css='inlineimg', src='/static/user.png')
+    img(alt='',  src='/static/user.png')
     txt(username)
 
 #### Here's how services work:
@@ -213,39 +188,25 @@ class NormalPage:
                        js_files=['jquery-1.2.6.min.js'], stylesheet='yb.css', 
                        title='End of September') as ret_val:
       with div(css='general'): #not sure why the main sidebar is called this...
-        with link(style='padding: 0; background-color: transparent; text-decoration: none;', service=Dummy):
-          img(src='/static/firegray.png', alt='firegray')
-        with div(css='sidebarsection'):
-          with div(style='text-align: center;', child_sep= " | "):
-            if self.dc.has_key('username'):
-              if self.dc['uid'] < 10:  #TODO if user is 'real'
-                with span(): txt("welcome, "); user_link(self.dc['username'])
-                with link(service=Dummy):
-                  txt("sign out")
-              else: #guest user
-                with link(service=Dummy):
-                  txt("create permanent account/sign in")
-                with span(): txt("welcome, guest user "); user_link(self.dc['username'])
-            else:
-              with link(service=Dummy):
-                txt("create account/sign in")
-              txt("welcome!")
-
+        #with center():
+        with link(service=Dummy, css='bkg_logo'):
+          img(src='/static/eos_tree_color_bkg.png', alt='End of September')
+        with div(css='sidebarsection', style='margin-top: -27px'):
           with div(style='text-align: center; padding-bottom: 1px',
                    child_sep=" | "):
-            with link(service=Dummy):
-              img(alt='', css='inlineimg', src='/static/read.png')
+            with link(service=Latest):
               txt("read")
-            with link(service=Dummy):
-              img(alt='', css='inlineimg', src='/static/write.png')
+              img(alt='', src='/static/read.png')
+            with link(service=Compose):
               txt("write")
+              img(alt='', src='/static/write.png')
             with link(service=Dummy):
-              img(alt='', css='inlineimg', src='/static/bestof.png')
               txt("best of")
+              img(alt='', src='/static/bestof.png')
         self.sidebar_contents()
         with form(service=Dummy,
                   style='padding-right: 7px; padding-left: 7px;'):
-          textline(style='width: 100%;', css='textin', name='search')
+          textline(style='width: 100%;', name='search')
           with div(style='float: right;'):
             submit(label='search')
           with checkbox(name='recent', checked=True): txt('recent')
@@ -255,23 +216,40 @@ class NormalPage:
           with link(service=Dummy): txt('about')
           with link(service=Dummy): txt('legal')
       with div(css='stream'): #main content area
-#         with div(css='navbar'):
-#           if self.dc.has_key('username'):
-#             if self.dc['uid'] < 10:  #TODO if user is 'real'
-#               with link(style='float: right', service=Dummy):
-#                 txt("sign out")
-#               txt("welcome, "); user_link(self.dc['username'])
-#             else: #guest user
-#               with link(style='float: right', service=Dummy):
-#                 txt("create permanent account/sign in")
-#               txt("welcome, guest user "); user_link(self.dc['username'])
-#           else:
-#             with link(style='float: right', service=Dummy):
-#               txt("create account/sign in")
-#             txt("welcome!")
+        with div(css='navbar'):
+          if self.dc.has_key('username'):
+            if self.dc['uid'] < 10:  #TODO if user is 'real'
+              with link(style='float: right', service=Dummy):
+                txt("sign out")
+              txt("welcome, "); user_link(self.dc['username'])
+            else: #guest user
+              with link(style='float: right', service=Dummy):
+                txt("create permanent account/sign in")
+              txt("welcome, guest user "); user_link(self.dc['username'])
+          else:
+            with link(style='float: right', service=Dummy):
+              txt("create account/sign in")
+            txt("welcome!")
               
         self.stream_contents()
+    
     print ret_val.emit()
+    log_dbg('total service time: %f seconds' % (time.time() - self.start))
+
+
+
+urls += ['/users/(.+)/login', 'Login']
+
+class Login(NormalPage):
+  def GET(self, username): #probably should be POST
+    uid = texas.get_uid_from_name(username)
+    web.setcookie('name', username, expires=3600*24*90)
+    ticket = texas.make_ticket(uid)
+    web.setcookie('ticket_for_' + username, ticket, expires=3600*24*90)
+
+    web.seeother('/users/'+username+'/latest')
+
+
 
 urls += ['/users/(.+)/history/(.+)', 'History']
 
@@ -282,25 +260,25 @@ class History(NormalPage, Posty):
 
     self.dc['posts'] = texas.get_history(self.dc['uid'], pos)
 
-
   @classmethod
   def url(cls, tag):
     return "/users/%s/history/%s" % (tag.get_dc('username'),
                                      tag.get_dc('pos'))
   def navvers(self):
     if self.dc['pos'] > 0:
-      with link(style='float: left;', service=OlderHistory): txt("older")
+      with link(style='float: left;', service=OlderHistory):
+        entity('larr'); txt("older")
     if self.dc['pos'] < self.dc['user'].current_batch:
       with link(style='float: right;', service=NewerHistory):
-        if self.dc['pos'] == self.dc['user'].current_batch-1: txt("most recent")
-        else: txt("newer")
+        if self.dc['pos'] == self.dc['user'].current_batch-1:
+          txt("most recent"); entity('rarr')
+        else: txt("newer"); entity('rarr')
     else: 
       non_ajax_button(style='float: right', service=Latest,
                       label='gather new articles')
     div(style='clear: both;')
       
   def stream_contents(self):
-    self.navvers()
     if not self.dc['fresh']:
       with span(style='text-align: center;'):
         with italic(): txt("You've seen these already.  You can gather new articles:")
@@ -308,13 +286,12 @@ class History(NormalPage, Posty):
     for post in self.dc['posts']:
       self.emit_post(post)
 
-    if len(posts) > 0:
-      self.navvers() #don't need a second copy of them unless we have actual posts
-    else:
+    self.navvers()
+    if len(posts) == 0:
       with italic():
         txt("You don't seem to have any history in this range.")
 
-  def emit_sidebar():
+  def sidebar_contents():
     with paragraph():
       txt("Good times, eh?")
 
@@ -365,22 +342,19 @@ class Latest(History):
     self.auth()
 
   def stream_contents(self):
-    self.navvers()
-
     posts = self.dc['posts']
 
     for post in posts:
       self.emit_post(post)
+    self.navvers()
 
-    if len(posts) > 0:
-      self.navvers()
-    else:
-      with italics():
+    if len(posts) == 0:
+      with italic():
         txt("There aren't any articles for you at the moment.")
 
   @classmethod
-  def url(cls, tag):
-    return "/users/%s/latest"
+  def url(cls, doc):
+    return "/users/%s/latest" % doc.get_dc('username')
 
   def sidebar_contents(self):
     with div(css='sidebarsection'):
@@ -389,7 +363,7 @@ class Latest(History):
       with paragraph():
         txt("The best articles appeal to many different kinds of users.")
     with div(css='sidebarsection'):
-      txt("Articles that you find worth the read are saved for"
+      txt("Articles that you find worth the read are saved for "
           "future reference.  Here are some recent ones:")
       with ul(s_id='recentwtr'):
         for pid in texas.recent_votes(self.dc['uid'], 4):
@@ -401,211 +375,135 @@ class Latest(History):
           txt("more...")
 
 
-# class history(cookie_session, normal_style):
-#   def GET(self, username, pos):
-#     uid = self.uid_from_cookie(username) 
-#     user = texas.get_user(uid)
-    
-#     if(pos == 'latest'):
-#       pos = user.current_batch-1 #making it an integer now
-#     else:
-#       pos = int(pos)
+class UserVisibleException(Exception, NormalPage): pass
 
-#     content = ''
-#     posts = texas.get_history(uid, pos)
-#     for post in posts:
-#       content += emit_post(post, uid)
-
-#     if len(posts) == 0:
-#       content = '<i>You don\'t seem to have history in the requested range.</i>'
-
-#     sidebar = render.ms_sidebar([texas.get_post(wtr) for wtr in texas.recent_votes(uid, 4)])
-#     self.package(sidebar,
-#         self.nav_wrap(content, username, pos,
-#                       pos == user.current_batch-1, False),
-#         uid < 10, username, js_files=['citizen.js'])
-
-
-class normal_style:
-  web.webapi.internalerror = web.debugerror
-  
-  def __init__(self):
-    import time
-    self.start = time.time()
-
-  def package(self, sidebar, content, real_user=False, username=None, js_files=[], title='firegray'):
-    import time
-    print '''
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en"> 
-<head><title>%s</title>
-<link rel="stylesheet" type="text/css" href="/static/yb.css" />
-<link rel="shortcut icon" href="/static/read.png" />
-<script src="/static/jquery-1.2.6.min.js" type="text/javascript"></script>
-''' % title
-    for js in js_files:
-      print '<script src="/static/%s" type="text/javascript"></script>' % js
-
-    print '</head><body>'
-    print render.sidebar_top(username)
-    print sidebar
-    print render.sidebar_bottom(real_user, username)
-    print '<div class="stream">'
-    print render.navbar(real_user, username)
-    print content
-    print '</div></body></html>'
-    log_dbg('total service time: %f seconds' % (time.time() - self.start))
-
-  
-  def nav_wrap(self, content, username, cur_batch, front, fresh):
-     #history doesn't make sense without a user
-    if username == None: return content
-    navver = (
-       ('<a style="float: left" href="/users/%s/history/%d">older</a>' % (username, cur_batch-1))
-      +(('<a style="float: right" href="/users/%s/history/%d">newer</a>' % (username, cur_batch+1))
-        if (not front) else
-        ('<a style="float: right" href="/users/%s/frontpage?fresh=yes">gather new articles</a>'
-           % (username))))
-    if not fresh:
-      return ('<center><i>'
-              +('You\'ve probably seen these articles already.  You can '
-                if front else
-                'You can also ')
-              + '<a href="/users/%s/frontpage?fresh=yes">gather new articles</a>.</i></center>' % username
-              + content + navver)
-    return content + navver
-
-
-class CantAuth(Exception):
+class CantAuth(UserVisibleException):
   def __init__(self, msg):
     self.msg = msg
 
   def __call__(self):  #executable exceptions become pages?
     print '<html><head></head><body>' + msg + '</body></html>'
+    return "call!" + msg
 
-class IllegalAction(Exception):
+
+  
+
+class IllegalAction(UserVisibleException):
   def __init__(self, msg):
     self.msg = msg
 
-#Private, but non-sensitive activities are accessible with a cookie login
-class cookie_session:
-  def uid_from_cookie(self, name_from_url=None):
-    cookies = web.cookies()
 
-    try:
-      if name_from_url != None:
-        username = name_from_url  
-      else:
-        username = cookies['name']
-      try:
-        uid = texas.get_uid_from_name(username)
-      except: #username not recognized (rare -- mucking with cookies?)
-        raise CantAuth("User name '" + username+"' not recognized.")
-      ticket = cookies['ticket_for_' + username]
-    except KeyError: #name missing (cookies cleared?) or ticket missing (rare)
-      raise CantAuth("Not logged in.")
-    if texas.check_ticket(uid, ticket):
-      web.setcookie('name', username, expires=3600*24*90) #sets identity
-      #after three months of inactivity, you get logged out
-      return uid
-    else: #ticket invalid (rare -- mucking with cookies?)
-      raise CantAuth("Invalid ticket.")
-  
-  def logout(self, name_from_url=''):
-    if len(name_from_url) > 0:
-      name = name_from_url
-    else:
-      try:
-        name = web.cookies()['name']
-      except KeyError:
-        raise CantAuth("Not logged in.")
-      
-    web.setcookie('name', '', expires=-1) #nuke the cookie
-    web.setcookie('ticket_for_' + name, '', expires=-1)
 
-class default(cookie_session):
-  def GET(self):
-    uid = self.uid_from_cookie()
-    web.seeother('/users/' + username + "/frontpage")
-
+# #/users/<username>/frontpage
+# class frontpage(cookie_session, normal_style):
+#   def GET(self, username):
+#     i = web.input()
+#     if(not i.has_key('fresh')):
+#       web.seeother('/users/'+username+'/history/latest')
+#       return
     
+#     uid = self.uid_from_cookie(username) #TODO: handle error
 
-#/users/<username>/frontpage
-class frontpage(cookie_session, normal_style):
-  def GET(self, username):
-    i = web.input()
-    if(not i.has_key('fresh')):
-      web.seeother('/users/'+username+'/history/latest')
-      return
+#     user = texas.get_user(uid)
+#     user_cluster = user.cid
+#     content = ''
+
+#     if(i.has_key('articles')):
+#       article_count = int(i['articles'])
+#       if article_count < 1 or article_count > 25:
+#         article_count = 6
+#     else:
+#       article_count = 6
     
-    uid = self.uid_from_cookie(username) #TODO: handle error
+#     posts = online.gather(user, texas)[0:article_count]
+#     for i, post in enumerate(posts):
+#       texas.add_to_history(uid, post.id, user.current_batch, i)
+#       content += emit_post(post, uid)
 
-    user = texas.get_user(uid)
-    user_cluster = user.cid
-    content = ''
-
-    if(i.has_key('articles')):
-      article_count = int(i['articles'])
-      if article_count < 1 or article_count > 25:
-        article_count = 6
-    else:
-      article_count = 6
-    
-    posts = online.gather(user, texas)[0:article_count]
-    for i, post in enumerate(posts):
-      texas.add_to_history(uid, post.id, user.current_batch, i)
-      content += emit_post(post, uid)
-
-    if len(posts) == 0:
-      content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
-    else:
-      texas.inc_batch(user) #batches seperate the history into pages
+#     if len(posts) == 0:
+#       content = '<i>We\'re out of articles for you at the moment.  If you\'re halfway normal, there should be some here for you soon.</i>'
+#     else:
+#       texas.inc_batch(user) #batches seperate the history into pages
 
 
 
-    sidebar = render.ms_sidebar([texas.get_post(wtr) for wtr in texas.recent_votes(uid, 4)])
+#     sidebar = render.ms_sidebar([texas.get_post(wtr) for wtr in texas.recent_votes(uid, 4)])
 
-    self.package(sidebar,
-        self.nav_wrap(content, username, user.current_batch, True, True),
-        uid < 10, username, js_files=['citizen.js'])
+#     self.package(sidebar,
+#         self.nav_wrap(content, username, user.current_batch, True, True),
+#         uid < 10, username, js_files=['citizen.js'])
 
 class Article(NormalPage):
   def GET(self, pid):
     pid = int(pid)
+    self.post = texas.get_post(pid, content=True)
+    self.try_auth()
+
+    self.emit()
+
+  def POST(self, pid):
+    i = web.input() #Someone's composed an article!
+    self.auth()
+    texas.fill_out_post(pid, self.dc['uid'], i.claim, i.body)
+    self.post = texas.get_post(pid, content=True) #and let's take a look at it
+
+    self.emit()
     
 
+  @classmethod
+  def url(cls, doc):
+    return "/articles/"+str(doc.get_dc('pid'))
 
-class article(cookie_session, normal_style):
-  def GET(self, pid):
-    pid = int(pid)
-    post = texas.get_post(pid, content=True)
-    try:
-      uid = self.uid_from_cookie(None)
-      content = emit_post(post, uid, expose=True)
-      real = uid > 10
-    except CantAuth:
-      username = None
-      real = False
-      content = emit_post(post, None, expose=True)
+  def stream_contents(self):
+    emit_post(self.post, expose=True)
 
-    self.package('', #TODO: make a special sidebar
-                 content,
-                 real, username, js_files=['citizen.js'])
+  def sidebar_contents(self):
+    txt("Lookit that article!  Ain't it a beaut?")
+      
 
-class compose(cookie_session, normal_style):
-  def GET(self, username): #composition page
+urls += ['/compose', 'Compose']
 
-    uid = self.uid_from_cookie(username)    
+class Compose(NormalPage):
+  def GET(self):
+    self.auth()
+    self.dc['pid'] = texas.create_empty_post(self.dc['uid'])
+    
+    self.emit()
 
-    self.package(render.c_sidebar(), render.c_body(), uid < 10, username, js_files=['quicktags.js', 'editor.js'])
+  @classmethod
+  def url(cls, doc):
+    return '/compose'
 
-  def POST(self, username): #submit a post
-    i = web.input()
-    uid = self.uid_from_cookie(username)
-    #TODO: we need to deal with pids in posts.  And record the author.
-    pid = texas.create_post(uid, i.claim, i.posttext)
-    web.seeother('/articles/' + str(pid))
+  def stream_contents(self):
+    with form(service=Article, css='post'):
+      with h2():
+        with span(css='posttitle'):
+          #with span(style='font-weight: normal;'): txt("Claim")
+          textline(name='claim')
+      textarea(name='body', rows='25', css='postbody',
+               style='width: 563px;')
+      with div(style='text-align: right;'):
+        with js_link(fn=Dummy): txt("enlarge text box")
+        submit(label='save draft'); submit(label='publish')
+      
+    
+
+  def sidebar_contents(self):
+    with div(css='sidebarsection'):
+      with paragraph(): txt("Write something interesting.")
+      with paragraph():
+        txt("Write about a specific")
+        with link(service=Dummy): txt("topic")
+        txt(", make sure to ")
+        with link(service=Dummy): txt("cite")
+        txt(" informative sources, and write for ")
+        with link(service=Dummy): txt("all kinds of readers")
+        txt(".")
+    with div(css='sidebarsection'):
+      txt("I bet you're thinking that some markup advice would look great here.")
+
+class cookie_session: pass
+class normal_style: pass
 
 class search_results(cookie_session, normal_style):
   def GET(self, username):

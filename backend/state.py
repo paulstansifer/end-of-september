@@ -138,14 +138,25 @@ class State:
         if len(user) is 0: raise DataError("user with name %s not found" % name)
         return int(user[0].id)
 
+    def create_empty_post(self, uid):
+        #pid = int(web.query('insert into post values (%d, %d, "", 0)') % ()
+        pid = int(web.insert('post', uid=uid, claim='', broad_support=0))
+        return pid
+
+    def fill_out_post(self, pid, uid, claim, content):
+        web.update('post', where='id=%s and uid=%s' % (pid, uid),
+                   claim=claim, content=content)
+
+        self._expose_post(uid, pid, content, 0)
+
     
     def create_post(self, uid, claim, content):
-        b_s = 0 #TMP -- should probably leave out from the SQL query
-        b_s += 2 * content.count('iddqd') #testing purposes only...
+        pid = int(web.insert('post', uid=uid, claim=claim))
         
-        pid = int(web.insert('post', uid=uid,
-                                  claim=claim,
-                                  broad_support=b_s))
+        self._expose_post(uid, pid, content, b_s)
+        return pid
+
+    def _expose_post(self, uid, pid, content, b_s=0):
         tokens = ' '.join(self.search.tokens(content))
         web.insert('post_content', pid=pid,
                    #these args are automatically sqlquoted?
@@ -154,7 +165,6 @@ class State:
                    safe_html='TODO')
         self.vote(uid, pid)
         self.search.add_article_contents(tokens, pid, b_s)
-        return pid
 
 
     

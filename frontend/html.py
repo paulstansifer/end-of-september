@@ -19,9 +19,13 @@ class txt:
     self.parent = tag_stack[-1]
     if self.parent != None:
       self.parent.children.append(self)
-            
+
   def emit(self):
     return web.net.htmlquote(self.t)
+
+class entity(txt):
+  def emit(self):
+    return "&%s;" % self.t
 
 # _dc_ means "document context".  It's information that gets inherited
 # along the document structure.
@@ -45,7 +49,10 @@ class tag:
 
   def __exit__(self, type, value, traceback):
     tag_stack.pop()
-        
+
+  def _silly_bool(self, name):
+    if self.attrs.pop(name, False):
+      self.attrs[name] = name
 
   def get_dc(self, key):
     if self.dc != None  and  self.dc.has_key(key):
@@ -133,7 +140,7 @@ class non_ajax_button(tag):
     url = self.attrs.pop('service').url(self)
     label = self.attrs.pop('label')
     return """<form action='%s' method='post' style='display:inline;'>
-<input type='button' value='%s'%s/></form>""" % (url, label, self.emit_attrs())
+<input type='submit' value='%s'%s/></form>""" % (url, label, self.emit_attrs())
 
     
 class link(tag):
@@ -170,8 +177,9 @@ class checkbox(tag):
     uniq_id = self.attrs['name'] #we also need 'name' as an attr
     self.attrs['id'] = uniq_id
 
-    if self.attrs.pop('checked', False):
-      self.attrs['checked'] = 'checked'
+    self._silly_bool('checked')
+    self._silly_bool('disabled')
+
     return ("<input%s /><label for='%s'>" % (self.emit_attrs(), uniq_id) 
             + self.emit_kids() + "</label>")
     
@@ -179,6 +187,7 @@ class submit(tag):
   def emit(self):
     self.attrs['type'] = 'submit'
     self.attrs['value'] = self.attrs.pop('label')
+
     return "<input%s />" % self.emit_attrs()
     
 def _make_default_tag(tagname):
@@ -199,7 +208,8 @@ italic = _make_default_tag('i')
 em = _make_default_tag('em')
 br = _make_default_tag('br')
 paragraph = _make_default_tag('p')
-
+center = _make_default_tag('center')
+textarea = _make_default_tag('textarea')
 #button
 #link
 #js_link

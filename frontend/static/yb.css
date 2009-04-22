@@ -2,22 +2,17 @@ body {
   color: Black;
   background-color: #BBBBBB;
   padding: 0px;
-  font-family: /*optima, candara, "Trebuchet MS", verdana,*/ "Helvetica Neue", serif;
+  font-family: /*candara, "Trebuchet MS", verdana,*/  "Helvetica Neue", serif;
   width: 800px;
   font-size: 80%;
 }
 
-/*span.lul {
-    color: #A0A0A0;
-    text-decoration: underline;
-}*/
+
 a {
   text-decoration: none;
   color: Black;
   padding-left: 1px;
   padding-right: 1px;
-  /*border-top: 1px solid #BBBBBB;*/
-  /*border-bottom: 1px dashed #BBBBBB;*/
   border-left: 2px solid #C8C8C8;
   border-right: 2px solid #C8C8C8;
    
@@ -26,48 +21,59 @@ a {
 }
 a.listedlink {
 }
-.inlineimg {
+a > img {
   margin-bottom: -4px;
 }
 a:visited {
-  background-color: #C6C6C6;
-  color: #303030;
+  /*color: #555; */ /*reenable when we have non-visited links again*/
 }
-form { 
+
+.bkg_logo {
+    padding: 0; 
+    border-width: 0; 
+    background-color: transparent; 
+    text-decoration: none;
+}
+.bkg_logo > img {
+    margin: 0; /* undo the inline-img margin-bottom thing */
+}
+
+/*form { 
   margin: 0;
   padding: 0;
-}
+}*/
 .tools {
   padding: 3px;
   text-align: right;
-  /*clear: both; tools is now inside the post float */
 }
-input{
-  border-top: 1px solid #777;
-  border-left: 1px solid #777;
-  border-right: 1px solid Black;
-  border-bottom: 1px solid Black;
-  background-color: #D0D0D0;
-    /*
-  margin-top: 3px;
-  margin-bottom: 3px;
-       */
-  padding: 2px;
-  margin: 4px;
+input[type=button], input[type=submit]{
+  border-style: solid;
+  border-width: 1px;
+  border-color: #777 Black Black #777;
+  background-color: #DDD;
+  padding: 1px;
+  margin: 1px;
 }
-.textin{
+input[type=button]:active, input[type=submit]:active{
+  position: relative;
+  top: 1px;
+  left: 1px;
+  border-color: Black #777 #777 Black;
+  background-color: #999;
+}
+input[type=text], input[type=checkbox]{
   border-top: 1px solid Black;
   border-left: 1px solid Black;
   border-right: 1px solid #555555;
   border-bottom: 1px solid #555555;
   background-color: #E4E4E4;
-  /*font-family: optima, candara, "Trebuchet MS", georgia, serif;*/
 }
-input[disabled] {
+input[disabled][type=button] {
   border: 3px double #909090;
   background-color: #C0C0C0;
   color: #303030;
   padding: 0px;
+  margin: 0px;
   /*font-weight: bold;*/
 }
 .thinline {
@@ -95,13 +101,13 @@ input[disabled] {
 }
 .stream {
   width: 565px;
-  text-align: justify;
+  /*text-align: justify;*/
   float: left;
   margin-right: 3px;
 }
 .post {
   border-top: 1px dotted #555;
-  border-left: 1px dotted #555;
+  border-right: 1px dotted #555;
   padding: 5px;
   /*margin-top: 10px;*/
   margin-top: 25px;
@@ -130,13 +136,13 @@ input[disabled] {
 .sidebar{
   float:left;
   width:115px;
-  border-right: 1px dotted #A0A0A0;
+  /*border-right: 1px dotted #A0A0A0;*/
   padding-right: 3px;
   font-size: 75%;
   text-align: left;
 }
 .sidebarsection{
-  border-bottom: 2px solid #505050;
+  border-bottom: 1px solid #505050;
   padding-bottom: 6px;
   padding-top: 3px;
   padding-left: 2px;
