@@ -3,12 +3,12 @@ import web
 
 class Dummy:
   @classmethod
-  def url(self, tag):
+  def url(cls, tag):
     return "/something/" #+tag.get_dc('id')
 
-  @classmethod
-  def js_call(self, tag):
-    return "javascript:alert('not implemented!')"
+
+def dummy_js(doc):
+  return "javascript:alert('not implemented!')"
 
 tag_stack = [None]
 
@@ -29,6 +29,11 @@ class entity(txt):
 
 # _dc_ means "document context".  It's information that gets inherited
 # along the document structure.
+#
+# _dc_ has a special element called 'ctxid'.  Any tag with an 'idc'
+# attr has its CSS id set to the 'idc' concatenated with the value of
+# 'ctxid'.  This way, multiple identical structures can be used with
+# JS, as long as they have different 'ctxid's
 
 class tag:
   def __init__(self, tagname=None, **attrs):
@@ -52,7 +57,7 @@ class tag:
 
   def _silly_bool(self, name):
     if self.attrs.pop(name, False):
-      self.attrs[name] = name
+      self.attrs[name] = name #e.g. "disabled='disabled'"
 
   def get_dc(self, key):
     if self.dc != None  and  self.dc.has_key(key):
@@ -90,8 +95,8 @@ class tag:
 
     if at.has_key('css'):
       at['class'] = at.pop('css')
-    if at.has_key('c_id'):
-      at['id'] = at.pop('c_id')+self.get_dc('id')
+    if at.has_key('idc'):
+      at['id'] = at.pop('idc')+str(self.get_dc('ctxid'))
             
     ret_val = ""
     for k, v in at.items():
@@ -105,7 +110,7 @@ class tag:
     return "<%s%s>%s</%s>" % (
       self.tagname, self.emit_attrs(), self.emit_kids(), self.tagname)
 
-class main_document(tag):
+class xhtml_document(tag):
   def get_dc(self, key): #end of the line
       return self.dc[key]
 
@@ -124,12 +129,19 @@ class main_document(tag):
           script for script in scripts)
 + '</head><body>' + self.emit_kids() + '</body></html>')
 
+class just_dc(tag):
+  def emit(self):
+    return self.emit_kids()
+
 class button(tag):
   def emit(self):
     url = self.attrs.pop('service').url(self) #have the service figure out its URL
     label = self.attrs.pop('label')
     replace = self.attrs.pop('replace')
     uniq_id = url.replace('/','_')
+
+    self._silly_bool('disabled')
+
     return """<form action='%s' method='post' style='display:inline;'>
 <input type='button' value='%s'
 onclick='javascript:ajax_replace("%s", "%s", "status_%s", "POST")'%s/>
@@ -154,11 +166,15 @@ class link(tag):
 class js_link(tag):
   def emit(self):
     self._add_css('js_link') #hidden by default, js exposes?
-    js_call = self.attrs.pop('fn').js_call(self)
+    js_call = self.attrs.pop('fn')(self)
     #before = self.attrs.pop('before', '')
     #after = self.attrs.pop('after', '')
     return "<a href='javascript:%s'%s>%s</a>" % (
         web.net.htmlquote(js_call), self.emit_attrs(), self.emit_kids())
+
+class vis_toggle_js_link(tag):
+  def emit(self):
+    pass
 
 class form(tag):
   def emit(self):

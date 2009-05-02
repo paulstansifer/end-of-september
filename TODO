@@ -1,4 +1,5 @@
 * Deal with XSRF: http://www.codinghorror.com/blog/archives/001171.html
 * Make a sitemap: http://www.codinghorror.com/blog/archives/001174.html
 * Verify that we're safe against XSS.  There are weird syntactic tricks attackers use! <http://www.owasp.org/index.php/XSS_(Cross_Site_Scripting)_Prevention_Cheat_Sheet>
+* http://jaspan.com/improved_persistent_login_cookie_best_practice
 * For graceful JS degredation, how about this?  Every AJAX request is an intercepted a href or submit target, which then GETs or POSTs to the requested URL, plus an 'ajax=inline' parameter.  The return value is the new content, but if there's no ajax=inline, it's wrapped in a simple but functional page.  For things that would be complete redraws, it could make multiple requests: ajax=body, ajax=sidebar, ajax=topbar.

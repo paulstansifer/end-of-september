@@ -7,7 +7,6 @@ body {
   font-size: 80%;
 }
 
-
 a {
   text-decoration: none;
   color: Black;
@@ -149,7 +148,8 @@ input[disabled][type=button] {
 }
 .postbody{
   float:right;
-  width:430px;
+  width:500px;
+  text-align: justify;
 }
 p {
   margin-top: 0pt;
@@ -189,6 +189,10 @@ li {
   margin-bottom: 5px;
   padding: 0px;
   display: none; /*only shown if JS is enabled*/
+}
+
+.mostly_hidden {
+  display: none;
 }
 
 

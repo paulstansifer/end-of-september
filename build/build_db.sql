@@ -11,7 +11,7 @@ drop table if exists cluster;
 drop table if exists cluster_connection;
 drop table if exists ticket;
 drop table if exists relevance;
-drop table if exists callout_votes;
+drop table if exists quote;
 drop table if exists history;
 
 --todo: should we declare everything NOT NULL?
@@ -28,10 +28,10 @@ create table user (
     password varchar(64)   not null,
     email varchar(64)      not null,
     date_joined timestamp  not null default now(),
-    current_batch integer  not null,
+    latest_batch integer   not null,
     constraint name_unique unique(name),
     constraint email_unique unique(email)
-    ) engine=InnoDB;  
+    ) engine=InnoDB; 
 --we use InnoDB so we can have transactions
 --InnoDB uses fsync a lot, so reiserfs will likely be faster than ext3
 
@@ -54,15 +54,16 @@ create table post (
 create table post_content (
     pid integer            not null references post,
     raw text               not null,
-    safe_html text,
-    tokens text
+    safe_html text--,
+    --tokens text
     ) engine=InnoDB;
-
+--TODO: rename "safe_html" to "rendered"
 create table vote (
     -- id serial primary key,
     uid integer            not null references user,
     pid integer            not null references post,
     date_voted timestamp   not null default now(),
+    qid integer            default null references quote,
     primary key(uid, pid)
     ) engine=InnoDB;
 
@@ -85,12 +86,12 @@ create table relevance (
     pid integer references post
     ) engine=InnoDB;
 
-create table callout_votes (
-    pid integer references post,
+create table quote (
+    id serial              not null primary key,
+    pid integer            references post,
     start_idx integer,
     end_idx integer,
-    uid integer references user,
-    primary key(pid, uid)
+    votes_for integer
     ) engine=InnoDB;
 
 create table history (

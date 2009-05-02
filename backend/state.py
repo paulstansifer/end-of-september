@@ -38,7 +38,7 @@ def _validate_email_address(email):
   if len(email) > 64: raise DataError("Invalid email address: '%s'.  We can only store 64 characters of email address.")
   if not _email_validator.match(email):
     raise DataError("Invalid email address: '%s'.  We won't be able to figure out how to send mail to that address.")
-#TODO: check for common mistakes that might not be mistakes in Javascript
+#TODO: use JS to issue warnings for improbable email addresses.
 #_probable_email_address = re.compile(r'[\w.+-]+@[a-z-]+([.][a-z-]+)*[.][a-z]{2,4}', 'I')
 _pwd_validator = re.compile(r'^[^%]{4,64}$')  #TODO: permit '%'s when web.py can deal with it
 def _validate_password(pwd):
@@ -110,7 +110,7 @@ class State:
       fakecid = random.randint(0,4) #TODO temporary hack
       new_user = int(self.db.insert('user', name=name, password=pwd, 
                                 email=email, cid0=fakecid, cid1=fakecid,
-                                current_batch=1))
+                                latest_batch=0))
       return new_user
 
     def check_ticket(self, uid, ticket):
@@ -164,7 +164,7 @@ class State:
         self.db.insert('post_content', pid=pid,
                    #these args are automatically sqlquoted?
                    raw=content,  
-                   tokens = tokens,
+                   #tokens = tokens,
                    safe_html='TODO')
         self.vote(uid, pid)
         self.search.add_article_contents(tokens, pid, b_s)
@@ -359,11 +359,31 @@ class State:
                         where cid_from=%d
                         order by rand()
                         limit %d''' % (cluster, count))]
+
+    def add_callout_text(self, pid, voter, text):
+      import re
+      
+      haystack = ' '.join(re.split(r'\W+',
+        self.db.query('select raw from post_content where pid=%d'
+                      % pid)[0].raw
+      ))
+      needle = ' '.join(re.split(r'\W+', text))
+
+      txt_start = haystack.find(needle)
+
+      start = haystack.count(' ', 0, txt_start)
+      end = start + needle.count(' ', 0, txt_start)
+
+      self.add_callout(pid, start, end, voter)
     
-    def add_callout(self, pid, start, end, voter):
-        web.query('insert into callout_votes values (%d, %d, %d, %d)' 
-                  % (pid, start, end, voter))
-        #TODO handle repeat votes -- update?
+    def add_callout(self, pid, start, end, voter): pass
+#       self.db.query('update set votes_for = votes_for - 1 ')
+#       try:
+#         self.db.query('update quote set ')
+      
+#       self.db.query('insert into quote values (%d, %d, %d, %d)' 
+#                     % (pid, start, end, voter))
+#         #TODO handle repeat votes -- update?
 
     def callouts_for(self, pid):
         return self.db.query('select * from quote where pid=%d' % pid)
