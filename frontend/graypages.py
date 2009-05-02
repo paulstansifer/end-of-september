@@ -142,7 +142,7 @@ class NormalPage:
     cookies = web.cookies()
 
     #URL first, then cookie
-    name = self.dc.pop('username', cookies.get('name'))
+    name = self.dc.pop('username', cookies['name'])
     if name == None:
       raise CantAuth("No username.  Are cookies enabled?")
 
@@ -150,9 +150,9 @@ class NormalPage:
       uid = texas.get_uid_from_name(name)
     except: #TODO: be specific about the exception
       raise CantAuth("Unknown username: '%s'" % name)
-    if not cookies.has_key('ticket_for_' + name):
+    if not cookies.has_key('ticket_for_' + str(uid)):
       raise CantAuth("No ticket.  Are cookies enabled?")
-    ticket = cookies['ticket_for_' + name]
+    ticket = cookies['ticket_for_' + str(uid)]
     if not texas.check_ticket(uid, ticket):
       raise CantAuth("Incorrect ticket.")
 
@@ -161,7 +161,7 @@ class NormalPage:
     self.dc['uid'] = uid
 
     web.setcookie('name', name, expires=3600*24*90)
-    web.setcookie('ticket_for_'+name, ticket, expires=3600*24*90)
+    web.setcookie('ticket_for_'+str(uid), ticket, expires=3600*24*90)
 
   def try_auth(self):
     try:
@@ -578,10 +578,9 @@ def config(wsgifunc):
     env['wsgi.errors'] = bb
     return wsgifunc(env, start_resp)
   return ret_val
-    
-def serve():
-  web.run(urls, globals(), web.reloader, config)
+
   
 if __name__ == "__main__":
-  serve()
+  app = web.application(urls, globals())
+  app.run()
 

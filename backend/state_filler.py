@@ -97,14 +97,17 @@ def populate_state(state):
             
             #state.add_to_history(file_uid, file_pid)  #put this back after we reduce the total number of votes
             state.vote(uid_file_to_state[file_uid],
-                   pid_file_to_state[file_pid],
-                   ['a','b','c','d'][topic])
+                       pid_file_to_state[file_pid])
+            
+            state.add_term(uid_file_to_state[file_uid],
+                           pid_file_to_state[file_pid],
+                           ['a','b','c','d'][topic])
         else:
             #state.add_to_history(file_uid, file_pid)
             state.vote(uid_file_to_state[file_uid],
                    pid_file_to_state[file_pid])
     print "Recalculating scores . . ."
-    for post in web.select('post'):
+    for post in state.db.select('post'):
         state.update_support(post.id, online.broad_support_for(post.id, state))
     print "Done."
 
