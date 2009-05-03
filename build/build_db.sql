@@ -1,104 +1,116 @@
 -- Table creation script for the YeabBut database.
--- > mysql -u yeahbut yb < build_db.sql
+-- > psql yb -U yb -f build_db.sql
 
 -- This is HIGHLY DESTRUCTIVE!
-drop table if exists globals;
-drop table if exists user;
-drop table if exists post;
-drop table if exists post_content;
-drop table if exists vote;
-drop table if exists cluster;
-drop table if exists cluster_connection;
-drop table if exists ticket;
-drop table if exists relevance;
-drop table if exists quote;
-drop table if exists history;
+DROP TABLE globals CASCADE;
+DROP TABLE usr CASCADE;
+DROP TABLE post CASCADE;
+DROP TABLE post_content CASCADE;
+DROP TABLE vote CASCADE;
+DROP TABLE cluster CASCADE;
+DROP TABLE cluster_connection CASCADE;
+DROP TABLE ticket CASCADE;
+DROP TABLE relevance CASCADE;
+DROP TABLE quote CASCADE;
+DROP TABLE history CASCADE;
 
---todo: should we declare everything NOT NULL?
+CREATE TABLE globals (
+    active_cid integer     NOT NULL DEFAULT 0
+    );
 
-create table globals (
-    active_cid integer     not null default 0
-    ) engine=InnoDB;
+CREATE TABLE cluster (
+    id serial              PRIMARY KEY,
+    num_users integer      NOT NULL DEFAULT 0
+    );
 
-create table user (
-    id serial              not null primary key,
-    cid0 integer           not null references cluster,
-    cid1 integer           not null references cluster,
-    name varchar(32)       not null,
-    password varchar(64)   not null,
-    email varchar(64)      not null,
-    date_joined timestamp  not null default now(),
-    latest_batch integer   not null,
+CREATE TABLE usr (
+    id serial              PRIMARY KEY,
+    cid0 integer           NOT NULL REFERENCES cluster,
+    cid1 integer           NOT NULL REFERENCES cluster,
+    name varchar(32)       NOT NULL,
+    password varchar(64)   NOT NULL,
+    email varchar(64)      NOT NULL,
+    date_joined timestamp  NOT NULL DEFAULT now(),
+    latest_batch integer   NOT NULL,
     constraint name_unique unique(name),
     constraint email_unique unique(email)
-    ) engine=InnoDB; 
---we use InnoDB so we can have transactions
---InnoDB uses fsync a lot, so reiserfs will likely be faster than ext3
+    );
 
-create table ticket (
-    uid integer            not null references user,
-    ticket text            not null,
-    last_used timestamp    not null default now()
-    ) engine=InnoDB;
+CREATE TABLE ticket (
+    uid integer            NOT NULL REFERENCES usr,
+    ticket text            NOT NULL,
+    last_used timestamp    NOT NULL DEFAULT now()
+    );
 
-create table post (
-    id serial              not null primary key,
-    uid integer            not null references user,
-    claim text             not null,
-    broad_support double   not null,
-    date_posted timestamp  not null default now(),
-    callout_start integer  default null,
-    callout_len integer    default null
-    ) engine=InnoDB;
+CREATE TABLE post (
+    id serial              PRIMARY KEY,
+    uid integer            NOT NULL REFERENCES usr,
+    claim text             NOT NULL,
+    broad_support real     NOT NULL,
+    date_posted timestamp  NOT NULL DEFAULT now(),
+    callout_start integer  DEFAULT NULL,
+    callout_len integer    DEFAULT NULL
+    );
 
-create table post_content (
-    pid integer            not null references post,
-    raw text               not null,
-    safe_html text--,
-    --tokens text
-    ) engine=InnoDB;
---TODO: rename "safe_html" to "rendered"
-create table vote (
-    -- id serial primary key,
-    uid integer            not null references user,
-    pid integer            not null references post,
-    date_voted timestamp   not null default now(),
-    qid integer            default null references quote,
-    primary key(uid, pid)
-    ) engine=InnoDB;
+CREATE TABLE post_content (
+    pid integer            NOT NULL REFERENCES post,
+    raw text               NOT NULL,
+    rendered text
+    );
 
-create table cluster (
-    -- num_users is probably not null also
-    id serial              not null primary key,
-    num_users integer 
-    ) engine=InnoDB;
+--just add things to this, and PostgreSQL will update the counts
+CREATE TABLE quote (
+    id serial              PRIMARY KEY,
+    pid integer            NOT NULL REFERENCES post,
+    start_idx integer      NOT NULL,
+    end_idx integer        NOT NULL,
+    votes_for integer      NOT NULL DEFAULT 1
+    );
 
-create table cluster_connection (
-    cid_from integer       not null references cluster,
-    cid_to integer         not null references cluster,
-    primary key(cid_from, cid_to)
+CREATE TABLE vote (
+    -- id serial PRIMARY KEY,
+    uid integer            NOT NULL REFERENCES usr,
+    pid integer            NOT NULL REFERENCES post,
+    date_voted timestamp   NOT NULL DEFAULT now(),
+    qid integer            DEFAULT NULL REFERENCES quote,
+    PRIMARY KEY(uid, pid)
+    );
+
+CREATE TABLE cluster_connection (
+    cid_from integer       NOT NULL REFERENCES cluster,
+    cid_to integer         NOT NULL REFERENCES cluster,
+    PRIMARY KEY(cid_from, cid_to)
     -- connection strength?
-    ) engine=InnoDB;
+    );
 
-create table relevance (
-    term varchar(80),
-    uid integer references user,
-    pid integer references post
-    ) engine=InnoDB;
+CREATE TABLE relevance (
+    term varchar(80)       NOT NULL,
+    uid integer            NOT NULL REFERENCES usr,
+    pid integer            NOT NULL REFERENCES post
+    );
 
-create table quote (
-    id serial              not null primary key,
-    pid integer            references post,
-    start_idx integer,
-    end_idx integer,
-    votes_for integer
-    ) engine=InnoDB;
 
-create table history (
-    uid integer references user,
-    pid integer references post,
-    -- date_viewed timestamp default now(),
-    position integer,
-    batch integer,
-    primary key(uid, pid)
-    ) engine=InnoDB;
+CREATE TABLE history (
+    uid integer            NOT NULL REFERENCES usr,
+    pid integer            NOT NULL REFERENCES post,
+    -- date_viewed timestamp NOT NULL DEFAULT now(),
+    position integer       NOT NULL,
+    batch integer          NOT NULL,
+    PRIMARY KEY(uid, pid)
+    );
+
+
+--http://archives.postgresql.org/pgsql-general/2007-08/msg00702.php
+CREATE RULE "replace_quote" AS
+  ON INSERT TO "quote"
+  WHERE
+    EXISTS(
+      SELECT 1 FROM quote 
+        WHERE pid=NEW.pid and
+              start_idx=NEW.start_idx and
+              end_idx=NEW.end_idx)
+  DO INSTEAD(
+     UPDATE quote SET votes_for=votes_for+1
+       WHERE pid=NEW.pid and
+             start_idx=NEW.start_idx and
+             end_idx=NEW.end_idx)

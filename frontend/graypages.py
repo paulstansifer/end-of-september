@@ -27,6 +27,14 @@ render = web.template.render('templates/')
 # the service itself sometimes.
 
 
+class UserTools:
+  def issue_credentials(self):
+    web.setcookie('name', self.dc['username'], expires=3600*24*90)
+    ticket = texas.make_ticket(self.dc['uid'])
+    web.setcookie('ticket_for_'+str(self.dc['uid']), ticket, expires=3600*24*90)
+    
+    
+
 class ArticleTools: #for mixing in with Service
   def emit_vote_tools(self, post, voted_for):
     #vote_tools can occur without a post, so it needs ctxid, too.
@@ -306,14 +314,26 @@ class Post:
 
 urls += ['/users/([^/]+)/login', 'Login']
 
-class Login(Get, Service):
+class Login(Get, Service, UserTools):
   def get_exec(self, username): #probably should be POST, when we make it work for real
-    uid = texas.get_uid_from_name(username)
-    web.setcookie('name', str(username), expires=3600*24*90)
-    ticket = texas.make_ticket(uid)
-    web.setcookie('ticket_for_'+str(uid), ticket, expires=3600*24*90)
+    self.dc['uid'] = texas.get_uid_from_name(username)
+    self.dc['username'] = username
+    self.issue_credentials()
 
     web.seeother('/users/'+username+'/latest')
+
+  def mainstream(self): pass #TODO: this is a hack -- we should prevent rendering
+
+urls += ['/users', 'Users']
+
+class Users(Post, Service, UserTools):
+  def post_exec(self):
+    inp = web.input() #TODO validate
+    self.dc['uid'] = texas.create_user(inp.name, inp.pwd, inp.email)
+    self.dc['username'] = inp.name
+    self.issue_credentials()
+
+    web.seeother('/users/'+inp.name+'/latest')
 
   def mainstream(self): pass
 
@@ -686,8 +706,11 @@ def config(wsgifunc):
     return wsgifunc(env, start_resp)
   return ret_val
 
-  
-if __name__ == "__main__":
+
+def serve():
   app = web.application(urls, globals())
   app.run()
+  
+if __name__ == "__main__":
+  serve()
 

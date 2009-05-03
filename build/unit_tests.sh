@@ -8,15 +8,14 @@ done;
 
 export PYTHONPATH="$PWD"
 
-#make yb_test sane
-mysql -u yeahbut yb_test < build/build_db.sql
+psql yb_test -U yb -f build_db.sql
 
 cd frontend/
 
 for test in test*.py
 do
     echo "===== $test ====="
-    python2.5 $test
+    python $test
 done
 
 cd ../backend/
@@ -24,5 +23,5 @@ cd ../backend/
 for test in test*.py
 do
     echo "===== $test ====="
-    python2.5 $test
+    python $test
 done

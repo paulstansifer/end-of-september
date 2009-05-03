@@ -90,7 +90,7 @@ class tag:
       return ''
     else:
       at = self.attrs
-    if at.get('expose', False):
+    if at.pop('expose', False):
       self._add_css('exposed')
 
     if at.has_key('css'):
@@ -100,7 +100,7 @@ class tag:
             
     ret_val = ""
     for k, v in at.items():
-      ret_val += " %s='%s'" % (k, v)
+      ret_val += " %s='%s'" % (k, web.net.htmlquote(v))
     return ret_val
 
   def __str__(self):

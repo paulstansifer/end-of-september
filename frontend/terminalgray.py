@@ -46,7 +46,7 @@ def _post(addr, data, base='http://localhost:8080'):
 
 def _become(username):
   #print "becoming", username
-  _get('/login?name=' + username)
+  _get('/users/%s/login' % username )
 
 #tries to return _count_ articles for _username_, may return fewer
 def get_articles(username, count):
@@ -61,7 +61,7 @@ def get_history(username, batch):
   return [pid_to_epid[a] for a in s.articles]
 
 def add_user(username):
-  _post('/login', {'name': username, 'pwd': 'asdf1234', 'email': username+'@example.com'})
+  _post('/users', {'name': username, 'pwd': 'asdf1234', 'email': username+'@example.com'})
   #TODO: when user creation is fleshed out, test for success
 
 def vote_for_article(username, epid):

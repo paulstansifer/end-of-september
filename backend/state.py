@@ -6,8 +6,6 @@
 # Persistent information will be stored in the databes although this class
 # will facilitate caching requests.
 
-# $Id: state.py 100 2008-04-11 00:34:48Z paul $
-
 from datetime import datetime
 import re
 import random # Needed for random cluster assignment hack.  Should disappear
@@ -25,7 +23,7 @@ class DataError(Exception):
 
 def sql_str(s):
   return "'" + (s.replace("\\", "\\\\").replace("'", "\\'")
-                 .replace("\0", "\\\0")) + "'"
+                 .replace("\0", "\\\0").replace("%", "%%")) + "'"
 
 
 _name_validator = re.compile(r'^[\w.-]{1,32}$')
@@ -46,7 +44,8 @@ def _validate_password(pwd):
     raise DataError("Invalid password.  Passwords must be between 4 and 64 characters, and not contain the character '%'")
 
 
-#TODO: catch MySQL exceptions and raise custom ones.
+#TODO: catch SQL exceptions and raise custom ones.
+#TODO: make INSERT/UPDATE ops easier: http://robbat2.livejournal.com/214267.html
   
 class State:
     def __init__(self, database='yb'):
@@ -54,14 +53,11 @@ class State:
         
         random.seed()
 
-        # as MySQL root: GRANT ALL ON yb.* to 'yeahbut'@'localhost';
         self.db = web.database(
-          dbn='mysql',
-          user='yeahbut',
-          pw='',
-          db=database,
-          charset='utf8')
-        
+          dbn='postgres',
+          user='yb',
+#          pw='',
+          db=database)
 
         #self.ssh_client = paramiko.SSHClient()
         self.cluster_size_cache = {}
@@ -76,7 +72,6 @@ class State:
     #mainly for testing, when we need to repeatedly make sane states
     def close(self):
       self.search.close()
-
       
     # For use when web server is NOT running
     def connect(self, database='yb'):
@@ -84,21 +79,23 @@ class State:
         pass
 
     def clear(self): #nuke everything in the database
-        for table in ['user', 'ticket', 'post', 'post_content', 'vote',
-                      'cluster', 'cluster_connection', 'relevance',
-                      'quote', 'history', 'globals']:
-            self.db.query('truncate %s' % table)
+      self.db.query('''truncate usr, ticket, post, post_content, vote,
+                      cluster, cluster_connection, relevance,
+                      quote, history, globals''')
 
-        self.db.query('insert into globals values (active_cid=0)')
-        self.active_cid = 0
+      self.db.query('insert into globals default values')
+      self.active_cid = 0
 
-        #temporary hack -- all clusters are connected
-        for a in xrange(0,5):
-            for b in xrange(0,5):
-                self.db.query('insert into cluster_connection values (%d, %d)' % (a,b))
+      for cid in xrange(0,5):
+        self.db.query('INSERT INTO cluster (id) VALUES (%d)' % cid)
 
-        self.search.clear()
+      #temporary hack -- all clusters are connected
+      for a in xrange(0,5):
+        for b in xrange(0,5):
+          self.db.query('insert into cluster_connection values (%d, %d)' % (a,b))
 
+      self.search.clear()
+          
 
     #TODO: impose restrictions on name contents 
     #TODO: don't store password directly!
@@ -108,7 +105,7 @@ class State:
       _validate_password(pwd)
       _validate_email_address(email)
       fakecid = random.randint(0,4) #TODO temporary hack
-      new_user = int(self.db.insert('user', name=name, password=pwd, 
+      new_user = int(self.db.insert('usr', name=name, password=pwd, 
                                 email=email, cid0=fakecid, cid1=fakecid,
                                 latest_batch=0))
       return new_user
@@ -131,14 +128,14 @@ class State:
         return ticket
     
     def get_user(self, uid):
-        user = self.db.query('select *, cid%d as cid from user where id=%d' % (self.active_cid, uid))
-        if len(user) is 0: raise DataError("user with uid %d not found" % uid)
+        user = self.db.query('select *, cid%d as cid from usr where id=%d' % (self.active_cid, uid))
+        if len(user) is 0: raise DataError("usr with uid %d not found" % uid)
 
         return user[0]
 
     def get_uid_from_name(self, name):
-        user = self.db.select('user', where='name=%s' % sql_str(name))
-        if len(user) is 0: raise DataError("user with name %s not found" % name)
+        user = self.db.select('usr', where='name=%s' % sql_str(name))
+        if len(user) is 0: raise DataError("usr with name %s not found" % name)
         return int(user[0].id)
 
     def create_empty_post(self, uid):
@@ -154,18 +151,16 @@ class State:
 
     
     def create_post(self, uid, claim, content):
-        pid = int(self.db.insert('post', uid=uid, claim=claim))
+        pid = int(self.db.insert('post', uid=uid, claim=claim, broad_support=0))
         
         self._expose_post(uid, pid, content, 0)
         return pid
 
     def _expose_post(self, uid, pid, content, b_s=0):
         tokens = ' '.join(self.search.tokens(content))
-        self.db.insert('post_content', pid=pid,
-                   #these args are automatically sqlquoted?
-                   raw=content,  
-                   #tokens = tokens,
-                   safe_html='TODO')
+        self.db.query('INSERT INTO post_content (raw, rendered, pid) '
+                      'VALUES (%s, %s, %d)' %
+                      (sql_str(content), sql_str('TODO'), pid))
         self.vote(uid, pid)
         self.search.add_article_contents(tokens, pid, b_s)
 
@@ -197,13 +192,15 @@ class State:
         return web.storage(lazies)
 
     def inc_batch(self, user):
-        self.db.query('update user set latest_batch=%d where id=%d'
+        self.db.query('update usr set latest_batch=%d where id=%d'
                   % (user.latest_batch+1, user.id))
 
     def add_to_history(self, uid, pid, batch, position):
       #TODO: ensure uniqueness better
       if len(self.db.select('history', where='uid=%d and pid=%d' % (uid, pid))) == 0:
-        self.db.insert('history', uid=uid, pid=pid, batch=batch, position=position)
+        self.db.query(
+'''INSERT INTO history (uid, pid, batch, position)
+VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
 
 
     def get_history(self, uid, batch):
@@ -216,19 +213,20 @@ class State:
 
     #TODO: after get_post is fixed, optimize, by going back to grabbing them.
     def get_random_pids(self, count):
-        return [p.id for p in self.db.select('post', order='rand()', limit='%d' % count)]
+        return [p.id for p in self.db.select('post', order='random()', limit='%d' % count)]
 
     def vote(self, uid, pid):
         if len(self.db.select('vote', where='uid=%d and pid=%d' % (uid, pid))) == 0:
-            self.db.insert('vote', uid=uid, pid=pid)
-        # otherwise vote already exists -- do nothing
+          self.db.query('INSERT INTO vote (uid, pid) VALUES (%d, %d)' %
+                        (uid, pid))
+          # otherwise vote already exists -- do nothing
 
     def add_term(self, uid, pid, term):
       #TODO: validate term
       if len(self.db.select('relevance', where='uid=%d and pid=%d and term=%s' % (uid, pid, sql_str(term)))) == 0:
         #log_dbg("STATE: vote term: [%s]" % term) #terms are bare
-        self.db.insert('relevance', uid=uid, pid=pid, term=term)
-
+        self.db.query('INSERT INTO relevance (uid, pid, term) '
+                      'VALUES (%d, %d, %s)' % (uid, pid, sql_str(term)))
 
     def voted_for(self, uid, pid):
         return len(self.db.select('vote', where='uid=%d and pid=%d' % (uid, pid))) > 0
@@ -281,7 +279,7 @@ class State:
         return num_clusters
 
     def get_sample_users_in_cluster(self, cluster, count):
-        return self.db.query('select *, cid%d as cid from user where cid%d=%d order by rand() limit %d'
+        return self.db.query('select *, cid%d as cid from usr where cid%d=%d order by random() limit %d'
                   % (self.active_cid, self.active_cid, cluster, count) )
 
     def apply_clusters(self, assignments):
@@ -296,9 +294,9 @@ class State:
         if self.cluster_size_cache.has_key(cluster):
             return self.cluster_size_cache[cluster]
         else:
-            rec = int(self.db.select('user', what='count(*)',
+            rec = int(self.db.select('usr', what='count(*) as count',
                           where='cid%d=%d' % (self.active_cid, cluster)
-                     )[0]['count(*)'])
+                     )[0]['count'])
             self.cluster_size_cache[cluster] = rec
             return rec
 
@@ -306,19 +304,19 @@ class State:
         self.cluster_count = 5 #TODO update with each rebasing, not here
         
         vote_list = self.db.query('''
-        select user.cid%d as cid, count(*) from vote
-        inner join user on vote.uid=user.id
+        select usr.cid%d as cid, count(*) as count from vote
+        inner join usr on vote.uid=usr.id
         where pid=%d
         group by cid
         ''' % (self.active_cid, pid))
         retval = [0 for c in xrange(self.cluster_count)]
         for record in vote_list:
-            retval[record['cid']] = record['count(*)']
+            retval[record['cid']] = record['count']
         return retval
 
     def get_term_popularity(self, term):
         log_tmp("STATE: term: [%s]" % term)
-        return self.db.query('select count(*) from relevance where term=%s' % sql_str(term))[0]['count(*)']
+        return self.db.query('select count(*) as count from relevance where term=%s' % sql_str(term))[0]['count']
 
     def get_term_in_clusters(self, term, clusters):
         log_tmp("STATE: clusters: " + str(clusters))
@@ -328,8 +326,8 @@ class State:
         return [r.pid for r in
             self.db.query('''
                 select relevance.pid from relevance
-                inner join user on relevance.uid=user.id
-                where relevance.term="%s" and user.cid%d in (%s)
+                inner join usr on relevance.uid=usr.id
+                where relevance.term="%s" and usr.cid%d in (%s)
                 ''' % (
                        sql_str(term),
                        self.active_cid,
@@ -357,7 +355,7 @@ class State:
         return [con.cid_to for con in
            self.db.query('''select cid_to from cluster_connection
                         where cid_from=%d
-                        order by rand()
+                        order by random()
                         limit %d''' % (cluster, count))]
 
     def add_callout_text(self, pid, voter, text):

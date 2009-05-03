@@ -86,10 +86,9 @@ def populate_state(state):
 
 
         if not file_pid in pid_file_to_state:
-            body = ''.join([
+            body = '\n\n'.join([
                             ' '.join([sample(para[topic], 1)[0]
                                       for k in xrange(randint(1,5))])
-                            + '\n\n  '
                             for j in xrange(randint(1,5))])
             state_pid = state.create_post(uid_file_to_state[file_uid],
                                           sample(claims, 1)[0], body)
