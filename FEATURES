@@ -3,7 +3,11 @@
  * Compose & Drafts: in strewn pieces, but should be relatively easy to reassemble.
  * User registration: needs a frontend
  * User pages & Configuration: not even planned yet
- * Bestof: not started
  * WTR archives: not started
  * History: functional, but interaction with search is poor.
+
+ ???
+
  * Callouts: in strewn pieces, unclear amount of work.
+ * Bestof: not started
+ * RSS: subscription-only?  Requires a regular "drip-gather".

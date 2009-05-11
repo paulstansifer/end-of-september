@@ -80,10 +80,13 @@ function ajax_replace(id, url, status_div, method) {
     url: url+'?format=inner_xhtml', dataType: 'html', type: method,
     success: function(data, textstatus) {
         $('#'+id).hide().html(data).fadeIn('normal');
-        $('#'+status_div).slideUp('slow'); //done!
+        //$('#'+status_div).slideUp('slow'); //done!
+        $('#recentwtr').prepend("<i>STATUS: "+textstatus+"</i>");
         //callback();
       },
-    error: function(data, textstatus) {
+    error: function(request, textstatus, error) {
+        alert(textstatus);
+        alert(error);
         if(textstatus == 'timeout') {
           $('#'+status_div).html('Timeout trying to contact server.');
         } else {
