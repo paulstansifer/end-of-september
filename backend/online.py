@@ -3,7 +3,6 @@ from math import sqrt
 from random import randint, sample
 from datetime import timedelta, datetime
 from frontend.log import *
-import state
 
 #The significance of a groups' vote is proportional to the fifth root of its size
 fifth_roots = {0: 0, 1: 1, 2: 1.149, 3: 1.246, 5: 1.380, 7: 1.475,
@@ -26,7 +25,8 @@ def fifth_root(val):  #I CAN HAS HAEK?
             u = m
     return (fifth_roots[frky[l]] + fifth_roots[frky[u]]) / 2
 
-def broad_support_for(pid, state):
+def calculate_broad_support(pid, state):
+    '''Used by state to keep the cached DB value up-to-date.'''
     return _broad_support(
         state.get_votes_by_pid_clustered(pid),
         state)

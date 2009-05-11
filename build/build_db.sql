@@ -13,6 +13,7 @@ DROP TABLE ticket CASCADE;
 DROP TABLE relevance CASCADE;
 DROP TABLE quote CASCADE;
 DROP TABLE history CASCADE;
+DROP TABLE bestof CASCADE;
 
 CREATE TABLE globals (
     active_cid integer     NOT NULL DEFAULT 0
@@ -21,6 +22,13 @@ CREATE TABLE globals (
 CREATE TABLE cluster (
     id serial              PRIMARY KEY,
     num_users integer      NOT NULL DEFAULT 0
+    );
+
+CREATE TABLE cluster_connection (
+    cid_from integer       NOT NULL REFERENCES cluster,
+    cid_to integer         NOT NULL REFERENCES cluster,
+    PRIMARY KEY(cid_from, cid_to)
+    -- connection strength?
     );
 
 CREATE TABLE usr (
@@ -46,6 +54,7 @@ CREATE TABLE post (
     id serial              PRIMARY KEY,
     uid integer            NOT NULL REFERENCES usr,
     claim text             NOT NULL,
+    published boolean      NOT NULL DEFAULT FALSE,
     broad_support real     NOT NULL,
     date_posted timestamp  NOT NULL DEFAULT now(),
     callout_start integer  DEFAULT NULL,
@@ -76,19 +85,11 @@ CREATE TABLE vote (
     PRIMARY KEY(uid, pid)
     );
 
-CREATE TABLE cluster_connection (
-    cid_from integer       NOT NULL REFERENCES cluster,
-    cid_to integer         NOT NULL REFERENCES cluster,
-    PRIMARY KEY(cid_from, cid_to)
-    -- connection strength?
-    );
-
 CREATE TABLE relevance (
     term varchar(80)       NOT NULL,
     uid integer            NOT NULL REFERENCES usr,
     pid integer            NOT NULL REFERENCES post
     );
-
 
 CREATE TABLE history (
     uid integer            NOT NULL REFERENCES usr,
@@ -99,8 +100,13 @@ CREATE TABLE history (
     PRIMARY KEY(uid, pid)
     );
 
+CREATE TABLE bestof (
+    pos serial             PRIMARY KEY,
+    pid integer            NOT NULL REFERENCES usr,
+    date_promoted timestamp NOT NULL DEFAULT now()
+    );
 
---http://archives.postgresql.org/pgsql-general/2007-08/msg00702.php
+--based on http://archives.postgresql.org/pgsql-general/2007-08/msg00702.php
 CREATE RULE "replace_quote" AS
   ON INSERT TO "quote"
   WHERE

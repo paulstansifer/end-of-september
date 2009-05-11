@@ -59,10 +59,10 @@ class TestState(unittest.TestCase):
 
     self.assertEqual(self.s.get_uid_from_name("DeanVenture"), dean_id)
     self.assertEqual(self.s.get_uid_from_name("HankVenture"), hank_id)
-    self.assertRaises(Exception, self.s.get_uid_from_name("deanVenture"))
-    self.assertRaises(Exception, self.s.get_uid_from_name, "Dean Venture")
-    self.assertRaises(Exception, self.s.get_uid_from_name, "*")
-    self.assertRaises(Exception, self.s.get_uid_from_name, inject)    
+    self.assertRaises(state.DataError, self.s.get_uid_from_name, "deanVenture")
+    self.assertRaises(state.DataError, self.s.get_uid_from_name, "Dean Venture")
+    self.assertRaises(state.DataError, self.s.get_uid_from_name, "*")
+    self.assertRaises(state.DataError, self.s.get_uid_from_name, inject)    
 
 
 def seed_state(state):

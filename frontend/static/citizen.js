@@ -50,7 +50,8 @@ function shrink(id) { //TODO: support earlier browsers
 }
 
 
-function callout(id) {
+
+function callout(id, status_div) {
   txt = '';
   if(window.getSelection) {
     txt = window.getSelection();
@@ -59,32 +60,37 @@ function callout(id) {
   } else if (document.selection) {
     txt = document.selection.createRange().text;
   }
+  if(txt == null || txt == '') {
+    $('#'+status_div).hide().html(
+      "Select a quotation from the article first to call it out.")
+      .slideDown('fast');
+  }
   //var req = ajax("/articles/"+id+"/callout?text="+escape(txt));
 }
 
-function add_recent_wtr() {
-  $('#recentwtr').prepend("<li><a style='display:none' class='listedlink'" 
-    +"href='/articles/...'>"+ "..." + "</a></li>")
-         .children(':first').children(':hidden').fadeIn('slow');
+function add_recent_wtr(id) {
+   $('#recentwtr').prepend("<li><a style='display:none' class='listedlink'" 
+     +"href='/articles/'+id>"+ $("#claim"+id).text() + "</a></li>")
+     .children(':first').children(':hidden').fadeIn('slow');
 }
 
-function ajax_replace(id, url, method, status_div/*, callback*/) {
-  $('#'+status_div).html('<em>Working...</em>');
+function ajax_replace(id, url, status_div, method) {
+  $('#'+status_div).hide().html('Working...').slideDown('fast');
   $.ajax({
-    url: url, dataType: 'html', type: method,
+    url: url+'?format=inner_xhtml', dataType: 'html', type: method,
     success: function(data, textstatus) {
         $('#'+id).hide().html(data).fadeIn('normal');
-        $('#'+status_div).html(''); //done!
+        $('#'+status_div).slideUp('slow'); //done!
         //callback();
       },
     error: function(data, textstatus) {
         if(textstatus == 'timeout') {
-          $('#'+status_div).html('<em>Timeout trying to contact server.</em>');
+          $('#'+status_div).html('Timeout trying to contact server.');
         } else {
-          $('#'+status_div).html('<em>Internal error talking to server.</em>');
+          $('#'+status_div).html('Internal error talking to server.'+textstatus);
         }
       }
-    })
+    });
 }
 
 function voteon(id, username, term) {

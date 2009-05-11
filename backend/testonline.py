@@ -9,11 +9,11 @@ class TestOnline(unittest.TestCase):
     self.ids = teststate.seed_state(self.s)
 
   def test_broader_support_sanity(self):
-    self.assert_(online.broad_support_for(self.ids['violence'], self.s)
-                 > online.broad_support_for(self.ids['pants'], self.s))
+    self.assert_(online.calculate_broad_support(self.ids['violence'], self.s)
+                 > online.calculate_broad_support(self.ids['pants'], self.s))
 
-    self.assert_(online.broad_support_for(self.ids['nonviolence'], self.s)
-                 > online.broad_support_for(self.ids['pants'], self.s))
+    self.assert_(online.calculate_broad_support(self.ids['nonviolence'], self.s)
+                 > online.calculate_broad_support(self.ids['pants'], self.s))
 
     
 

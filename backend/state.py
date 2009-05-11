@@ -1,10 +1,15 @@
 #!/usr/bin/python
 
-# Class and associated files for representing the state of a
-# Yeah-But.
+# Everything that persists query-to-query goes through here.  The
+# backends are the PostgreSQL database and the Xapian search database.
+# The state object is responsible for consistency of everything below
+# the UI.
 
-# Persistent information will be stored in the databes although this class
-# will facilitate caching requests.
+# TODO: look at PL/Python:
+# http://www.postgresql.org/docs/8.1/interactive/plpython.html I
+# believe that it will allow us to execute Python inside transactions.
+# This way, we can probably drastically reduce the number of
+# transactions performed per query.  But no premature optimization!
 
 from datetime import datetime
 import re
@@ -13,7 +18,9 @@ import random # Needed for random cluster assignment hack.  Should disappear
 import web # Needed for database access
 
 from frontend.log import *
+from frontend.grayservice import IllegalAction
 import search
+import online
 
 class DataError(Exception):
   def __init__(self, value):
@@ -81,7 +88,7 @@ class State:
     def clear(self): #nuke everything in the database
       self.db.query('''truncate usr, ticket, post, post_content, vote,
                       cluster, cluster_connection, relevance,
-                      quote, history, globals''')
+                      quote, history, globals, bestof''')
 
       self.db.query('insert into globals default values')
       self.active_cid = 0
@@ -138,23 +145,22 @@ class State:
         if len(user) is 0: raise DataError("usr with name %s not found" % name)
         return int(user[0].id)
 
-    def create_empty_post(self, uid):
-        #pid = int(self.db.query('insert into post values (%d, %d, "", 0)') % ()
-        pid = int(self.db.insert('post', uid=uid, claim='', broad_support=0))
-        return pid
 
-    def fill_out_post(self, pid, uid, claim, content):
-        self.db.update('post', where='id=%d and uid=%d' % (pid, uid),
-                   claim=claim, content=content)
-
-        self._expose_post(uid, pid, content, 0)
-
-    
     def create_post(self, uid, claim, content):
-        pid = int(self.db.insert('post', uid=uid, claim=claim, broad_support=0))
-        
+      '''Create a complete post.  Not used by graypages, which does
+each part on its own.'''
+      pid = self.create_empty_post(uid)
+      self.fill_out_post(pid, uid, claim, content, True)
+      return pid
+
+    def create_empty_post(self, uid):
+        return int(self.db.insert('post', uid=uid, claim='', broad_support=0))
+
+    def fill_out_post(self, pid, uid, claim, content, publish):
+        self.db.update('post', where='id=%d and uid=%d' % (pid, uid),
+                   claim=claim, published=publish)
+
         self._expose_post(uid, pid, content, 0)
-        return pid
 
     def _expose_post(self, uid, pid, content, b_s=0):
         tokens = ' '.join(self.search.tokens(content))
@@ -170,9 +176,17 @@ class State:
       def __init__(self, state, pid):
         self.state = state
         self.pid = pid
-      #TODO: some good lazy DB access.
+      #TODO: some good lazy DB access.  It should have the lowest
+      #level of transaction protection -- just get the most recent
+      #consistent state.
     #def get_post(self, pid):
     #  return LazyPost(self, pid)
+
+    def get_drafts(self, uid):
+      return [
+        self.get_post(post.id, True) #Ugh.  Inefficient.  
+        for post in
+        self.db.select('post', where='uid=%d and published=FALSE' % uid)]
 
     #TODO: this laziness system works, but is kinda ugly.  We should fix it, above
     def get_post(self, pid, content=False):
@@ -216,10 +230,12 @@ VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
         return [p.id for p in self.db.select('post', order='random()', limit='%d' % count)]
 
     def vote(self, uid, pid):
-        if len(self.db.select('vote', where='uid=%d and pid=%d' % (uid, pid))) == 0:
-          self.db.query('INSERT INTO vote (uid, pid) VALUES (%d, %d)' %
-                        (uid, pid))
-          # otherwise vote already exists -- do nothing
+      if len(self.db.select('vote', where='uid=%d and pid=%d'%(uid, pid))) == 0:
+        self.db.query('INSERT INTO vote (uid, pid) VALUES (%d, %d)' %
+                      (uid, pid))
+        self._update_support(pid, online.calculate_broad_support(pid, self))
+          
+        # otherwise vote already exists -- do nothing
 
     def add_term(self, uid, pid, term):
       #TODO: validate term
@@ -235,7 +251,7 @@ VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
         return [entry.term for entry in self.db.query(
           'select term from relevance where uid=%d and pid=%d' % (uid, pid))]
 
-    def update_support(self, pid, support):
+    def _update_support(self, pid, support):
         self.db.update('post', where='id=%d' % pid, broad_support=support)
         self.search.update_support(pid, support)
 
@@ -368,13 +384,19 @@ VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
       needle = ' '.join(re.split(r'\W+', text))
 
       txt_start = haystack.find(needle)
+      if txt_start == -1:
+        raise IllegalAction(
+          "'%s' is not a quote from the article." % text)
 
       start = haystack.count(' ', 0, txt_start)
       end = start + needle.count(' ', 0, txt_start)
 
       self.add_callout(pid, start, end, voter)
     
-    def add_callout(self, pid, start, end, voter): pass
+    def add_callout(self, pid, start, end, voter):
+      #TODO check to make sure there's preexisting quote
+      self.db.query('INSERT INTO quote (pid, start_idx, end_idx) '
+                    'VALUES (%d, %d, %d)' % (pid, start, end))
 #       self.db.query('update set votes_for = votes_for - 1 ')
 #       try:
 #         self.db.query('update quote set ')

@@ -110,7 +110,7 @@ class Search:
 
         for ex_pid in exemplar_pids:
             ex = state.the.get_post(ex_pid, content=True)
-            #print >> sys.stderr, "SEARCH: exemplar tokens:\n%s\n---\n" % ex.tokens()
+            log_tmp( "SEARCH: exemplar tokens: [%s]" % ex.tokens())
             guesser.train("relevant", ex.tokens()) #get normalized content from p.
             # TODO Toss in other factors, if possible.
 
@@ -127,7 +127,9 @@ class Search:
         proportions = [ #knock out the weak and irrelevant ones before sorting
             (tok, prop) for (tok, prop) in proportions if prop > 2 ]
 
-        if len(proportions) < 3:
+        fulltext_fallback = len(proportions) < 3
+
+        if fulltext_fallback:
             query = xapian.Query(xapian.Query.OP_AND, [term])
         else:
             proportions.sort(key=operator.itemgetter(1), reverse=True)

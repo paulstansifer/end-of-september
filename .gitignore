@@ -3,6 +3,7 @@
 *#
 .#*
 yb-search
+yb_test-search
 paul.pbxuser
 paul.perspective
 .DS_Store
@@ -11,3 +12,4 @@ paul.perspective
 *.a
 .gdb_history
 .Rhistory
+pg_log

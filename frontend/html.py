@@ -6,6 +6,10 @@ class Dummy:
   def url(cls, tag):
     return "/something/" #+tag.get_dc('id')
 
+  @classmethod
+  def js(cls, doc, tag):
+    return "alert('not implemented!')"
+
 
 def dummy_js(doc):
   return "javascript:alert('not implemented!')"
@@ -97,6 +101,9 @@ class tag:
       at['class'] = at.pop('css')
     if at.has_key('idc'):
       at['id'] = at.pop('idc')+str(self.get_dc('ctxid'))
+    if at.has_key('ids'):
+      at['id'] = at.pop('ids')
+
             
     ret_val = ""
     for k, v in at.items():
@@ -135,17 +142,18 @@ class just_dc(tag):
 
 class button(tag):
   def emit(self):
-    url = self.attrs.pop('service').url(self) #have the service figure out its URL
+    service = self.attrs.pop('service')
+    url = service.url(self) #have the service figure out its URL
     label = self.attrs.pop('label')
     replace = self.attrs.pop('replace')
-    uniq_id = url.replace('/','_')
+    uniq_id = self.get_dc('ctxid')  #every ctxid should have its own status area
 
     self._silly_bool('disabled')
 
     return """<form action='%s' method='post' style='display:inline;'>
-<input type='button' value='%s'
-onclick='javascript:ajax_replace("%s", "%s", "status_%s", "POST")'%s/>
-</form>""" % (url, label, replace, url, uniq_id, self.emit_attrs())#, uniq_id)
+<input type='button' value='%s' onclick='javascript:%s'%s/>
+</form>""" % (url, label, web.net.htmlquote(service.js(url, self)),
+              self.emit_attrs())
 
 class non_ajax_button(tag):
   def emit(self):
