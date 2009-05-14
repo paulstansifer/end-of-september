@@ -1,3 +1,5 @@
+#sysctl -w kern.sysv.shmmax=134217728 kern.sysv.shmmin=1 kern.sysv.shmmni=32 kern.sysv.shmseg=8 kern.sysv.shmall=32768
+
 # -----------------------------
 # PostgreSQL configuration file
 # -----------------------------
@@ -91,7 +93,7 @@ ssl = off
 # - Memory -
 
 #shared_buffers = 300			# min 16 or max_connections*2, 8KB each
-shared_buffers = 65536     # 64 MB, phelegthon usually has a lot of RAM used already
+shared_buffers = 4096
 #temp_buffers = 1000			# min 100, 8KB each
 #max_prepared_transactions = 5		# can be 0 or more
 # note: increasing max_prepared_transactions costs ~600 bytes of shared memory

@@ -4,6 +4,7 @@ import web
 import time
 
 from html import *
+from log import *
 
 #### Here's how services work:
 # They are subclasses of Service.
@@ -80,30 +81,30 @@ self.sidebar_contents) are for non-AJAX users.'''
 #these should be paired with a Service or an AJAXService
 class Get:
   def GET(self, *args):
-    try:
+#    try:
       self.get_exec(*args)
       return self.emit()
-    except UserVisibleException, e:
-      return e.GET()
+#    except UserVisibleException, e:
+#      return e.GET()
 
 class Post:
   def POST(self, *args):
-    try:
+#    try:
       self.post_exec(*args)
       return self.emit()
-    except UserVisibleException, e:
-      return e.GET()
+#    except UserVisibleException, e:
+#      raise web.webapi.HTTPError(e.status, {}, e.GET())
 
 
 # UserVisibleException is caught be the service, and displayed to the
 # user instead of normal content.  In the future, they should change
 # the HTTP response code
 
-class UserVisibleException(Exception, Get, Service):
+class UserVisibleException(web.webapi._NotFound, Service, Get):
    def __init__(self, msg):
      Service.__init__(self) #Get needs no constructor
-     Exception.__init__(self, msg)
      self.msg = msg
+     web.webapi._NotFound.__init__(self, self.GET())
 
    def get_exec(self): pass
 
@@ -119,6 +120,6 @@ class CantAuth(UserVisibleException):
     with italic():
       txt("Unable to log in: " + self.msg)
 
-class IllegalAction(UserVisibleException):
-  pass
+class IllegalAction(UserVisibleException): pass
+
   

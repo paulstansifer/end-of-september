@@ -409,4 +409,22 @@ VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
         return self.db.query('select * from quote where pid=%d' % pid)
 
 
+    def set_best_of(day):
+      # The best twelve posts from the previous day
+      best = texas.db.query('''SELECT * FROM post WHERE (date_posted, date_posted) 
+OVERLAPS (DATE '%s', DATE '%s') ORDER BY broad_support DESC LIMIT 12''' % 
+        ((day - timedelta(1)).isoformat(), day.isoformat()))
+
+      best.sort(lambda a, b: a.date_posted - b.date_posted)
+
+      for b in best:
+        texas.db.insert('bestof', pid=b.id)
+
+    def get_best_of(day):
+      return [self.get_post(bestof.pid) for bestof in texas.db.query(
+'''SELECT * FROM bestof WHERE (date_promoted, date_promoted)
+OVERLAPS (DATE '%s', DATE '%s')''')]
+        
+        
+
 the = State()

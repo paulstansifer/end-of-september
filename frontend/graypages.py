@@ -23,7 +23,7 @@ search = texas.search
 def emit_full_page(self):
   '''Standard page structure with a main stream and a sidebar.'''
   with xhtml_document(dc=self.dc, favicon='read.png', 
-                      js_files=['jquery-1.2.6.min.js', 'citizen.js'],
+                      js_files=['jquery-1.3.2.min.js', 'citizen.js'],
                       stylesheet='yb.css', 
                       title='End of September') as ret_val:
     with div(css='general'): #not sure why the main sidebar is called this...
@@ -57,20 +57,22 @@ def emit_full_page(self):
         with link(service=Dummy): txt('about')
         with link(service=Dummy): txt('legal')
     with div(css='stream'): #main content area
-      with div(css='navbar'):
+      with div(css='navbar', child_sep=" | "):
         if self.dc.has_key('username'):
           if self.dc['uid'] < 10:  #TODO if user is 'real'
-            with link(style='float: right', service=Dummy):
-              txt("sign out")
-            txt("welcome, "); user_link(self.dc['username'])
+            with span():
+              txt("welcome, "); user_link(self.dc['username'])
+            with link(service=Dummy):
+              txt("log out")
           else: #guest user
-            with link(style='float: right', service=Dummy):
-              txt("create permanent account/sign in")
-            txt("welcome, guest user "); user_link(self.dc['username'])
+            with span():
+              txt("welcome, guest user "); user_link(self.dc['username'])
+            with link(service=Dummy): txt("create permanent account")
+            with link(service=Dummy): txt("log in")
         else:
-          with link(style='float: right', service=Dummy):
-            txt("create account/sign in")
           txt("welcome!")
+          with link(service=Dummy): txt("create account")
+          with link(service=Dummy): txt("log in")
 
       self.mainstream()
 
@@ -95,7 +97,7 @@ serious/unreversable.'''
 
     if self.dc.has_key('username'):
       name = self.dc.pop('username') #will be reinstated if we validate
-    elif cookies.has_key('username'):
+    elif cookies.has_key('name'):
       name = cookies['name']
     else:
       raise CantAuth("No username.  Are cookies enabled?")
@@ -103,7 +105,7 @@ serious/unreversable.'''
     try:
       uid = texas.get_uid_from_name(name)
     except DataError, e: #TODO: be specific about the exception
-      raise CantAuth("Unknown username: '%s'")
+      raise CantAuth("Unknown username: '%s'" % name)
     if not cookies.has_key('ticket_for_' + str(uid)):
       raise CantAuth("No ticket -- you are not logged in.")
     ticket = cookies['ticket_for_' + str(uid)]
@@ -161,7 +163,7 @@ class ArticleTools: #for mixing in with Service
         entity('mdash')
         txt(human_friendly.render_timedelta(datetime.now()
                                             - post.date_posted))
-        txt(" ago "); entity('mdash'); txt(" by ")
+        txt(" ago by ")
         user_link(texas.get_user(post.uid).name)
         button(service=Dummy, label='Good quote', replace='post')
         txt(" ")
@@ -191,8 +193,8 @@ class ArticleTools: #for mixing in with Service
         with span(css='posttitle', idc='claim'):
           #with span(style='font-weight: normal;'): txt("Claim: ")
           txt(post.claim)
-        with js_link(fn=js.hide('content')):
-          img(alt='hide', src='/static/x-icon.png')
+#        with js_link(fn=js.hide('content')):
+#          img(alt='hide', src='/static/x-icon.png')
 #       with div(css='sidebar'):
 #         with div(style='text-align: center; margin-bottom: 1em;'):
 #           with div(idc='sidebar_summary', css='j_summary', expose=expose,
@@ -536,18 +538,19 @@ class search_results(cookie_session, normal_style):
     sidebar = render.search_sidebar(inp.local)
     self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
 
-urls += [r'/articles/(\d+)/wtr', 'Vote']
+urls += [r'/articles/([0-9]+)/wtr', 'Vote']
 
 class Vote(Post, AJAXService, UserTools, ArticleTools):
   def post_exec(self, pid):
+    log_tmp('post_exec....')
     i = web.input()
     self.auth()
 
     pid = int(pid)
     self.post = texas.get_post(pid)
     texas.vote(self.dc['uid'], pid)
-    if self.has_parm('term'):
-      texas.add_term(self.dc['uid'], pid, self.param('iterm'))
+    if self.has_param('term'):
+      texas.add_term(self.dc['uid'], pid, self.param('term'))
 
   @classmethod
   def url(cls, doc):
@@ -556,11 +559,12 @@ class Vote(Post, AJAXService, UserTools, ArticleTools):
   @classmethod
   def js(cls, url, doc): #TODO: is there a way to plumb 'tools' nicely?
     ctxid = doc.get_dc('ctxid')
-    return ("ajax_replace('tools%d', '%s', '%s', 'POST');" % (
-      ctxid, url, doc.get_dc('status_area')+str(ctxid)) +
-            "add_recent_wtr(%d)" % ctxid)
+    return ("ajax_replace('tools%d', '%s', '%s', 'POST'," %
+      (ctxid, url, doc.get_dc('status_area')+str(ctxid)) +
+            "function(){add_recent_wtr(%d)});" % ctxid)
 
   def mainstream(self):
+    log_tmp('mainstream')
     self.emit_post(self.post, expose=True)
 
   def mainchunk(self):
@@ -577,6 +581,28 @@ class Quote(Post, AJAXService, UserTools, ArticleTools):
   def mainstream(self):
     '''Just a status message here for successful quotings.'''
 
+
+#TODO give BestOf a history
+class BestOf(Get, Service, ArticleTools):
+  def get_exec(self):
+    self.try_auth() #TODO make everything at least try_auth
+    
+    self.posts = texas.get_best_of(datetime.replace(hour=0, minute=0,
+                                                    second=0, microsecond=0))
+  @classmethod
+  def url(cls, tag):
+    return "/bestof"
+
+  def mainstream(self):
+    for post in self.posts:
+      self.emit_post(post)
+
+    #self.navvers()
+
+  def sidebar_contents(self):
+    with paragraph():
+      txt("It's the best!")
+  
 
 class recluster:
   def GET(self):
