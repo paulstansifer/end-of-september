@@ -11,7 +11,7 @@
 # This way, we can probably drastically reduce the number of
 # transactions performed per query.  But no premature optimization!
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import random # Needed for random cluster assignment hack.  Should disappear
 
@@ -133,6 +133,9 @@ class State:
 
         self.db.query('insert into ticket (uid, ticket) values (%d, %s)'  % (uid, sql_str(ticket)))
         return ticket
+
+    def nuke_ticket(self, uid, ticket):
+      self.db.query('DELETE FROM ticket WHERE uid=%d AND ticket=%s' % (uid, sql_str(ticket)))
     
     def get_user(self, uid):
         user = self.db.query('select *, cid%d as cid from usr where id=%d' % (self.active_cid, uid))
@@ -272,16 +275,27 @@ VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
                    limit %d''' % (voter, limit))]
 
     def recent_unviewed_votes(self, voter, viewer, limit):
-        #Get votes made by _voter_ for articles _viewer_ hasn't viewed.
-        return [v.pid for v in
-            self.db.query(
-              '''select vote.pid from vote
-                   left outer join history
-                     on (vote.pid=history.pid and history.uid=%d)
-                   where vote.uid=%d and history.uid is null
-                   order by vote.date_voted desc
-                   limit %d''' % (viewer, voter, limit))]
-        # the weird join is there because we care about the *absence* of an appropriate _history_ entry
+      '''Get votes made by _voter_ for articles _viewer_ has not
+      viewed.'''
+      return [v.pid for v in
+        self.db.query(
+          '''select vote.pid from vote
+               left outer join history
+                 on (vote.pid=history.pid and history.uid=%d)
+               where vote.uid=%d and history.uid is null
+               order by vote.date_voted desc
+               limit %d''' % (viewer, voter, limit))]
+      # the weird join is there because we care about the *absence* of an appropriate _history_ entry
+
+    def recent_unbestof_votes(self, uid, limit):
+      return [v.pid for v in
+        self.db.query(
+          '''select vote.pid from vote
+               left outer join bestof
+                 on (vote.pid=bestof.pid)
+               where vote.uid=%d and bestof.pos is null
+               order by vote.date_voted desc
+               limit %d''' % (uid, limit))]
 
 
     def votes_for_pid(self, pid):
@@ -294,6 +308,9 @@ VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
         num_clusters = num_query[0]['count(*)']
         return num_clusters
 
+    # Note: this can totally return users who are not currently
+    # participating, and therefore useless for analysis.  So get
+    # extras!
     def get_sample_users_in_cluster(self, cluster, count):
         return self.db.query('select *, cid%d as cid from usr where cid%d=%d order by random() limit %d'
                   % (self.active_cid, self.active_cid, cluster, count) )
@@ -409,21 +426,17 @@ VALUES (%d, %d, %d, %d)''' % (uid, pid, batch, position))
         return self.db.query('select * from quote where pid=%d' % pid)
 
 
-    def set_best_of(day):
-      # The best twelve posts from the previous day
-      best = texas.db.query('''SELECT * FROM post WHERE (date_posted, date_posted) 
-OVERLAPS (DATE '%s', DATE '%s') ORDER BY broad_support DESC LIMIT 12''' % 
-        ((day - timedelta(1)).isoformat(), day.isoformat()))
+    def set_best_of(self):
+      bests = online.gather_global(self)[0:3]
+      for best in bests:
+        self.db.query('INSERT INTO bestof (pid) VALUES (%d)'%best.id)
 
-      best.sort(lambda a, b: a.date_posted - b.date_posted)
 
-      for b in best:
-        texas.db.insert('bestof', pid=b.id)
-
-    def get_best_of(day):
-      return [self.get_post(bestof.pid) for bestof in texas.db.query(
+    def get_best_of(self, day):
+      return [self.get_post(bestof.pid, True) for bestof in self.db.query(
 '''SELECT * FROM bestof WHERE (date_promoted, date_promoted)
-OVERLAPS (DATE '%s', DATE '%s')''')]
+OVERLAPS (DATE '%s', DATE '%s')''' %
+(day.isoformat(), (day + timedelta(1)).isoformat()))]
         
         
 

@@ -1,6 +1,6 @@
  * Search: prototype is working.  Performance characteristics and effectiveness are unclear
  * Gather: functional.  May need further improvements?
- * Compose & Drafts: in strewn pieces, but should be relatively easy to reassemble.
+ * Compose & Drafts: in strewn pieces, but should be relatively easy to assemble.
  * User registration: needs a frontend
  * User pages & Configuration: not even planned yet
  * WTR archives: not started
@@ -9,5 +9,5 @@
  ???
 
  * Callouts: in strewn pieces, unclear amount of work.
- * Bestof: not started
+ * Bestof: a prototype is close to working
  * RSS: subscription-only?  Requires a regular "drip-gather".

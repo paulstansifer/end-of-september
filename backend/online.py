@@ -1,5 +1,4 @@
 from math import sqrt
-#from state import State
 from random import randint, sample
 from datetime import timedelta, datetime
 from frontend.log import *
@@ -61,6 +60,16 @@ def rate_recent_article(article):
 def cmp_recent_articles(a, b):
     return cmp(rate_recent_article(b), rate_recent_article(a)) 
 
+def gather_global(state):
+  delg_ids = []
+
+  for cluster in state.db.query('SELECT * FROM cluster'):
+    delg_ids += [d.id for d in
+                 state.get_sample_users_in_cluster(cluster.id, 10)]
+
+  return _collect_from_delegates(delg_ids, 5, state)
+    
+
 def gather(user, state):
   import time;  start = time.time()
   #log_tmp("ONLINE: cid " + str(user.cid))
@@ -69,26 +78,34 @@ def gather(user, state):
   
   delg_ids = []
 
-  #get around 12 users
+  #get around 20 users.  Hopefully, some will be interesting.
   for c in nearby:
     delg_ids += [d.id for d in
-                 state.get_sample_users_in_cluster(c,12/len(nearby))]
+                 state.get_sample_users_in_cluster(c, 20/len(nearby))]
 
   #log_tmp("ONLINE: delegates " + str(delg_ids))
 
+  return _collect_from_delegates(delg_ids, 4, state, user)
+  #log_dbg('gather time: %f seconds' % (time.time() - start))
+
+
+def _collect_from_delegates(delg_ids, votes_per_delg, state, specific_voter=None):
   #get four recent votes per user
   possible_articles = []
   for delg_id in delg_ids:
     #if users' implicit votes for their own articles are not stored
-    #explicitly, we need to factor them in here.  Also, we might want to give the
-    #self-votes a little more power at this point, just to get articles started
-    votes = state.recent_unviewed_votes(delg_id, user.id, 4)
+    #explicitly, we need to factor them in here.  Also, we might want
+    #to give the self-votes a little more power at this point, just to
+    #get articles started
+    if specific_voter != None:
+      votes = state.recent_unviewed_votes(delg_id, specific_voter.id,
+                                          votes_per_delg)
+    else:
+      votes = state.recent_unbestof_votes(delg_id, votes_per_delg)
     #log_tmp("ONLINE: new votes " + str(votes))
     possible_articles += [state.get_post(vote, content=True) for vote in votes]
     #log_tmp("ONLINE: possible articles count " + str(len(possible_articles)))
 
   possible_articles.sort(cmp=cmp_recent_articles)
-
-  log_dbg('gather time: %f seconds' % (time.time() - start))
 
   return uniq_posts(possible_articles)

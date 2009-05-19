@@ -14,7 +14,6 @@ class TestOnline(unittest.TestCase):
 
     self.assert_(online.calculate_broad_support(self.ids['nonviolence'], self.s)
                  > online.calculate_broad_support(self.ids['pants'], self.s))
-
     
 
 

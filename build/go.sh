@@ -24,6 +24,8 @@ if [ "$1" = "tg" ]; then
     python $OPT $YB/frontend/terminalgray.py;
 elif [ "$1" = "generate-state" ]; then
     python $OPT $YB/backend/state_filler.py;
+elif [ "$1" = "bo" ]; then
+    python $OPT $YB/backend/bestof.py;
 elif [ "$1" = "ut" ]; then
     psql yb_test -U yb -q -f $YB/build/build_db.sql
     for test in $YB/frontend/test*.py
@@ -42,6 +44,8 @@ elif [ "$1" = "rebuild-just-db" ]; then
 elif [ "$1" = "rebuild" ]; then
     psql yb -U yb -f $YB/build/build_db.sql
     python $OPT $YB/backend/state_filler.py
+elif [ "$1" = "prof" ]; then
+    python -m cProfile $OPT $YB/frontend/graypages.py;
 else
     cd $YB/frontend
     python $OPT $YB/frontend/graypages.py;

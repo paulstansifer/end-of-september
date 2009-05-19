@@ -1,14 +1,6 @@
 from log import *
 import web
 
-class Dummy:
-  @classmethod
-  def url(cls, tag):
-    return "/something/" #+tag.get_dc('id')
-
-  @classmethod
-  def js(cls, doc, tag):
-    return "alert('not implemented!')"
 
 
 def dummy_js(doc):
@@ -89,6 +81,12 @@ class tag:
     else:
       self.attrs['css'] = css
 
+  def _add_style(self, style):
+    if self.attrs.has_key('style'):
+      self.attrs['style'] += ' ' + style
+    else:
+      self.attrs['style'] = style
+
   def emit_attrs(self):
     if len(self.attrs) == 0:
       return ''
@@ -145,8 +143,8 @@ class button(tag):
     service = self.attrs.pop('service')
     url = service.url(self) #have the service figure out its URL
     label = self.attrs.pop('label')
-    replace = self.attrs.pop('replace')
-    uniq_id = self.get_dc('ctxid')  #every ctxid should have its own status area
+    #replace = self.attrs.pop('replace')
+    #uniq_id
 
     self._silly_bool('disabled')
 
@@ -213,7 +211,9 @@ class submit(tag):
     self.attrs['value'] = self.attrs.pop('label')
 
     return "<input%s />" % self.emit_attrs()
-    
+
+#TODO: float_l, float_r, center, and clear divs
+
 def _make_default_tag(tagname):
   return lambda **attrs: tag(tagname, **attrs)
 
@@ -234,6 +234,7 @@ br = _make_default_tag('br')
 paragraph = _make_default_tag('p')
 center = _make_default_tag('center')
 textarea = _make_default_tag('textarea')
+
 #button
 #link
 #js_link

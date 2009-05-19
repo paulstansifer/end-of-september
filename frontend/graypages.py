@@ -1,7 +1,7 @@
 from __future__ import with_statement
 
 import web
-from datetime import datetime
+from datetime import datetime, date, timedelta
 
 from backend import state, search, engine, online
 
@@ -9,6 +9,7 @@ from html import *
 import js
 import human_friendly
 from grayservice import Service, AJAXService, Get, Post, CantAuth
+import directory as drct
 
 from frontend.log import *
 
@@ -19,6 +20,7 @@ log_dbg("Initializing graypages . . .")
 texas = state.the
 search = texas.search
 
+#TODO: it'd be nice to have a @classmethod to generate tags instead of just JS
 
 def emit_full_page(self):
   '''Standard page structure with a main stream and a sidebar.'''
@@ -28,7 +30,7 @@ def emit_full_page(self):
                       title='End of September') as ret_val:
     with div(css='general'): #not sure why the main sidebar is called this...
       #with center():
-      with link(service=Dummy, css='bkg_logo'):
+      with link(service=drct.Dummy, css='bkg_logo'):
         img(src='/static/eos_tree_color_bkg.png', alt='End of September')
       with div(css='sidebarsection', style='margin-top: -27px'):
         with div(style='text-align: center; padding-bottom: 1px',
@@ -40,11 +42,29 @@ def emit_full_page(self):
             with link(service=Compose):
               txt("write")
               img(alt='', src='/static/write.png')
-          with link(service=Dummy):
+          with link(service=drct.Dummy):
             txt("best of")
             img(alt='', src='/static/bestof.png')
+
+      with div(css='sidebarsection', style='text-align: center;', child_sep=" | "):  #previously, css='navbar'
+        if self.dc.has_key('username'):
+          if self.dc['uid'] < 10:  #TODO if user is 'real'
+            with span():
+              txt("welcome, "); user_link(self.dc['username'])
+            with link(service=drct.Dummy):
+              txt("log out")
+          else: #guest user
+            with span():
+              txt("welcome, guest user "); user_link(self.dc['username'])
+            with link(service=drct.Dummy): txt("create permanent account")
+            with link(service=drct.Dummy): txt("log in")
+        else:
+          txt("welcome!")
+          with link(service=drct.Dummy): txt("create account")
+          with link(service=drct.Dummy): txt("log in")
+
       self.sidebar_contents()
-      with form(service=Dummy,
+      with form(service=drct.Dummy,
                 style='padding-right: 7px; padding-left: 7px;'):
         textline(style='width: 100%;', name='search')
         with div(style='float: right;'):
@@ -54,26 +74,10 @@ def emit_full_page(self):
           with checkbox(name='local', checked=True): txt('local')
         div(style='clear: both;')
       with div(style='text-align: center;', child_sep=" | "):
-        with link(service=Dummy): txt('about')
-        with link(service=Dummy): txt('legal')
-    with div(css='stream'): #main content area
-      with div(css='navbar', child_sep=" | "):
-        if self.dc.has_key('username'):
-          if self.dc['uid'] < 10:  #TODO if user is 'real'
-            with span():
-              txt("welcome, "); user_link(self.dc['username'])
-            with link(service=Dummy):
-              txt("log out")
-          else: #guest user
-            with span():
-              txt("welcome, guest user "); user_link(self.dc['username'])
-            with link(service=Dummy): txt("create permanent account")
-            with link(service=Dummy): txt("log in")
-        else:
-          txt("welcome!")
-          with link(service=Dummy): txt("create account")
-          with link(service=Dummy): txt("log in")
-
+        with link(service=drct.Dummy): txt('about')
+        with link(service=drct.Dummy): txt('legal')
+    with div(css='stream', ids='stream'): #main content area
+      div(ids='main_status')
       self.mainstream()
 
   return ret_val.emit()
@@ -122,9 +126,9 @@ serious/unreversable.'''
   def issue_credentials(self):
     web.setcookie('name', self.dc['username'], expires=3600*24*90)
     ticket = texas.make_ticket(self.dc['uid'])
-    web.setcookie('ticket_for_'+str(self.dc['uid']), ticket, expires=3600*24*90)
-
-
+    web.setcookie('ticket_for_'+str(self.dc['uid']), ticket,
+                  expires=3600*24*90)
+    
   def try_auth(self):
     try:
       self.auth()
@@ -142,6 +146,7 @@ serious/unreversable.'''
         uid = texas.get_uid_from_name(name)
       except KeyError, e:
         return #Not logged in at all?
+    texas.nuke_ticket(self.dc['uid'], web.cookies(ticket_name)) #TODO: handle errors
     web.setcookie('name', '', expires=-1)
     web.setcookie('ticket_for_'+str(uid), '', expires=-1)
 
@@ -165,7 +170,7 @@ class ArticleTools: #for mixing in with Service
                                             - post.date_posted))
         txt(" ago by ")
         user_link(texas.get_user(post.uid).name)
-        button(service=Dummy, label='Good quote', replace='post')
+        button(service=drct.Dummy, label='Good quote', replace='post')
         txt(" ")
       button(service=Vote, label='Worth the read', replace='tools',
              disabled=voted_for)
@@ -187,7 +192,7 @@ class ArticleTools: #for mixing in with Service
 
     
     with div(dc={'ctxid': post.id, 'pid': post.id}, css='post', idc='post', style='clear: both;'):
-      with js_link(fn=dummy_js, css='dismisser'):
+      with js_link(fn=drct.Dummy, css='dismisser'):
         img(alt='dismiss this entry', src='/static/x-icon.png')
       with h2():
         with span(css='posttitle', idc='claim'):
@@ -199,12 +204,12 @@ class ArticleTools: #for mixing in with Service
 #         with div(style='text-align: center; margin-bottom: 1em;'):
 #           with div(idc='sidebar_summary', css='j_summary', expose=expose,
 #                    child_sep=" | "):
-#             with js_link(fn=dummy_js): txt("expand")
-#             with link(service=Dummy): txt("page")
+#             with js_link(fn=drct.Dummy): txt("expand")
+#             with link(service=drct.Dummy): txt("page")
 #           with div(idc='sidebar_content', css='j_content', expose=expose,
 #                    child_sep=" | "):
-#             with js_link(fn=dummy_js): txt("contract")
-#             with link(service=Dummy): txt("page")
+#             with js_link(fn=drct.Dummy): txt("contract")
+#             with link(service=drct.Dummy): txt("page")
 #         #for k, v in all_extras.items():
 #         #  with bold(): txt(k)
 #         #  txt(": "); txt(str(v))
@@ -228,27 +233,22 @@ class ArticleTools: #for mixing in with Service
 # creating buttons or links.  There's also the dc of the current
 # Service, which we feed to the root of the document, and is used by
 # the service itself sometimes.
-
-
         
 
 #TODO: this iface makes no sense -- the service will need context, so
 #it's silly not to use it to get the username.  Of course, it's also
 #impossible to do so.
 def user_link(username):
-  with link(service=Dummy):
+  with link(service=drct.Dummy):
     img(alt='',  src='/static/user.png')
     txt(username)
 
-
+    
 
 #### Service implementations ####
 urls = []
 
-
-
 urls += ['/users/([^/]+)/login', 'Login']
-
 class Login(Get, Service, UserTools):
   def get_exec(self, username): #probably should be POST, when we make it work for real
     self.dc['uid'] = texas.get_uid_from_name(username)
@@ -259,11 +259,17 @@ class Login(Get, Service, UserTools):
 
   def mainstream(self): pass #TODO: this is a hack -- we should prevent rendering
 
-urls += ['/users', 'Users']
+urls += ['/users/([^/]+)/logout', 'Logout']
+class Logout(Get, Service, UserTools):
+  def get_exec(self): #is this a GET?  Everyone makes this sort of thing a link
+    self.logout()
+    web.seeother('/bestof')
 
+
+urls += ['/users', 'Users']
 class Users(Post, Service, UserTools):
   def post_exec(self):
-    inp = web.input() #TODO validate
+    inp = web.input()
     self.dc['uid'] = texas.create_user(self.param('name'),
                                        self.param('pwd'),
                                        self.param('email'))
@@ -276,7 +282,7 @@ class Users(Post, Service, UserTools):
 
 urls += ['/users/([^/]+)/history/(\d+)', 'History']
 
-class History(Get, Service, UserTools, ArticleTools):
+class History(Get, AJAXService, UserTools, ArticleTools):
   def get_exec(self, username, pos):
     self.dc['username'] = username
     self.auth()
@@ -293,8 +299,8 @@ class History(Get, Service, UserTools, ArticleTools):
       with link(style='float: left;', service=OlderHistory):
         entity('larr'); txt("older")
     if self.dc['pos'] == self.dc['user'].latest_batch:
-      non_ajax_button(style='float: right', service=Latest,
-                      label='gather new articles')
+      button(style='float: right', service=Latest, 
+             label='gather new articles')
     elif self.dc['pos'] == self.dc['user'].latest_batch-1:
         with link(style='float: right;', service=Latest):
           txt("most recent"); entity('rarr')
@@ -327,10 +333,16 @@ class NewerHistory(History):
     return "/users/%s/history/%s" % (tag.get_dc('username'),
                                     tag.get_dc('pos')+1)  
 
-
 urls += ['/users/([^/]+)/latest', 'Latest']
-
 class Latest(History, Post):
+  @classmethod
+  def url(cls, doc):
+    return "/users/%s/latest" % doc.get_dc('username')
+
+  @classmethod
+  def js(cls, url, doc): #TODO: 'main_status' could be defined in a better place
+    return ("ajax_replace('stream', '%s', 'main_status', 'POST', null)" % url)
+
   def get_exec(self, username): #retrieve the most recent front page
     self.dc['username'] = username
     self.auth()
@@ -369,7 +381,7 @@ class Latest(History, Post):
       with div(style='text-align: center;'):
         with italic():
           txt("You've seen these already.  You can ")
-          non_ajax_button(service=Latest, label='gather new articles')
+          button(service=Latest, label='gather new articles')
     posts = self.posts
 
     for post in posts:
@@ -379,10 +391,9 @@ class Latest(History, Post):
     if len(posts) == 0:
       with italic():
         txt("There aren't any articles for you at the moment.")
-
-  @classmethod
-  def url(cls, doc):
-    return "/users/%s/latest" % doc.get_dc('username')
+        
+  def mainchunk(self):
+    return self.mainstream() #we're replacing the stream exactly
 
   def sidebar_contents(self):
     with div(css='sidebarsection'):
@@ -397,9 +408,9 @@ class Latest(History, Post):
         for pid in texas.recent_votes(self.dc['uid'], 4):
           post = texas.get_post(pid)
           with li(dc={'pid': post.id}):
-            with link(css='listedlink', service=Dummy):
+            with link(css='listedlink', service=drct.Dummy):
               txt(post.claim)
-        with link(service=Dummy, style='text-align: right;'):
+        with link(service=drct.Dummy, style='text-align: right;'):
           txt("more...")
 
 
@@ -448,7 +459,6 @@ class Compose(Get, Service, UserTools):
     if len(self.drafts) == 0:
       self.drafts = [texas.get_post(
         texas.create_empty_post(self.dc['uid']), content=True)]
-
     
   @classmethod
   def url(cls, doc):
@@ -460,13 +470,12 @@ class Compose(Get, Service, UserTools):
                 dc={'ctxid': draft.id, 'pid': draft.id}):
         with h2():
           with span(css='posttitle'):
-            #with span(style='font-weight: normal;'): txt("Claim")
             textline(name='claim')
         textarea(name='body', rows='25', css='postbody',
                  style='width: 563px;')
         with div(style='text-align: right;'):
-          with js_link(fn=dummy_js): txt("enlarge text box")
-          button(service=Dummy, replace='draft', label='save draft')
+          with js_link(fn=drct.Dummy): txt("enlarge text box")
+          button(service=drct.Dummy, replace='draft', label='save draft')
           submit(label='publish')
       
   def sidebar_contents(self):
@@ -474,11 +483,11 @@ class Compose(Get, Service, UserTools):
       with paragraph(): txt("Write something interesting.")
       with paragraph():
         txt("Choose a specific")
-        with link(service=Dummy): txt("topic")
+        with link(service=drct.Dummy): txt("topic")
         txt(", make sure to ")
-        with link(service=Dummy): txt("cite")
+        with link(service=drct.Dummy): txt("cite")
         txt(" informative sources, and write for ")
-        with link(service=Dummy): txt("all kinds of readers")
+        with link(service=drct.Dummy): txt("all kinds of readers")
         txt(".")
     with div(css='sidebarsection'):
       txt("I bet you're thinking that some markup advice would look great here.")
@@ -491,13 +500,13 @@ urls += []
 class Search(Post, Service, UserTools, ArticleTools):
   def post_exec(self):
     terms = inp.search
-
     self.try_auth()
 
     self.local = self.maybe_param('local', False)
 
     if self.local:
-      self.results = search.local_search(user.cid, terms, self.param('recent'))
+      self.results = search.local_search(self.dc['user'].cid, terms,
+                                         self.param('recent'))
     else:
       self.results = search.global_search(terms, self.param('recent'))
 
@@ -570,7 +579,7 @@ class Vote(Post, AJAXService, UserTools, ArticleTools):
   def mainchunk(self):
     self.emit_vote_tools(self.post, voted_for=True)
     
-urls += ['/articles/([^/]+)/quote', 'Quote']
+urls += ['/articles/([0-9]+)/quote', 'Quote']
 
 class Quote(Post, AJAXService, UserTools, ArticleTools):
   def post_exec(self, pid):
@@ -581,28 +590,61 @@ class Quote(Post, AJAXService, UserTools, ArticleTools):
   def mainstream(self):
     '''Just a status message here for successful quotings.'''
 
+urls += ['/bestof/([0-9]{4})-([0-9]{2})-([0-9]{2})', 'BestOfHistory']
 
-#TODO give BestOf a history
-class BestOf(Get, Service, ArticleTools):
-  def get_exec(self):
+class BestOfHistory(Get, Service, UserTools, ArticleTools):
+  def get_exec(self, year, month, day):
     self.try_auth() #TODO make everything at least try_auth
+    self.dc['date'] = date(int(year), int(month), int(day)) #TODO: deal with errors
+    self.posts = texas.get_best_of(self.dc['date'])
+
+  def navvers(self):
+    with link(style='float: left;', service=OlderBestOf):
+      entity('larr'); txt("older")
+    if self.dc['date'] != date.today():
+      if self.dc['date'] == date.today() - timedelta(1):
+        with link(style='float: right;', service=LatestBestOf):
+          txt("today"); entity('rarr')
+      else:
+        with link(style='float: right;', service=NewerBestOf):
+          txt("newer"); entity('rarr')
+    div(style='clear: both;')
     
-    self.posts = texas.get_best_of(datetime.replace(hour=0, minute=0,
-                                                    second=0, microsecond=0))
   @classmethod
   def url(cls, tag):
-    return "/bestof"
+    return "/bestof/" + tag.get_dc('date').isoformat()
 
   def mainstream(self):
     for post in self.posts:
       self.emit_post(post)
-
-    #self.navvers()
+    self.navvers()
 
   def sidebar_contents(self):
     with paragraph():
-      txt("It's the best!")
-  
+      txt("Four times a day, we gather three of the best articles and put them here.")
+
+
+
+urls += ['/bestof', 'LatestBestOf']
+class LatestBestOf(BestOfHistory):
+  def get_exec(self):
+    self.try_auth()    
+    self.dc['date'] = date.today()
+    self.posts = texas.get_best_of(self.dc['date'])
+
+  @classmethod
+  def url(cls, tag):
+    return "/bestof"
+
+class NewerBestOf(BestOfHistory):
+  @classmethod
+  def url(cls, tag):
+    return "/bestof/" + (tag.get_dc('date') + timedelta(1)).isoformat()
+
+class OlderBestOf(BestOfHistory):
+  @classmethod
+  def url(cls, tag):
+    return "/bestof/" + (tag.get_dc('date') - timedelta(1)).isoformat()
 
 class recluster:
   def GET(self):

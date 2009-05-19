@@ -15,6 +15,9 @@ DROP TABLE quote CASCADE;
 DROP TABLE history CASCADE;
 DROP TABLE bestof CASCADE;
 
+--all dates and times are local, which is the default of both Python
+--and PostgreSQL
+
 CREATE TABLE globals (
     active_cid integer     NOT NULL DEFAULT 0
     );
@@ -49,6 +52,7 @@ CREATE TABLE ticket (
     ticket text            NOT NULL,
     last_used timestamp    NOT NULL DEFAULT now()
     );
+CREATE INDEX ticket_idx ON ticket(uid);
 
 CREATE TABLE post (
     id serial              PRIMARY KEY,
@@ -66,6 +70,7 @@ CREATE TABLE post_content (
     raw text               NOT NULL,
     rendered text
     );
+CREATE INDEX post_content_idx ON post_content(pid);
 
 --just add things to this, and PostgreSQL will update the counts
 CREATE TABLE quote (
@@ -90,6 +95,8 @@ CREATE TABLE relevance (
     uid integer            NOT NULL REFERENCES usr,
     pid integer            NOT NULL REFERENCES post
     );
+CREATE INDEX relevance_term ON relevance(term);
+CREATE INDEX relevance_term ON relevance(uid);
 
 CREATE TABLE history (
     uid integer            NOT NULL REFERENCES usr,
@@ -99,12 +106,14 @@ CREATE TABLE history (
     batch integer          NOT NULL,
     PRIMARY KEY(uid, pid)
     );
+CREATE INDEX history_idx ON history(uid, pid);
 
 CREATE TABLE bestof (
     pos serial             PRIMARY KEY,
     pid integer            NOT NULL REFERENCES usr,
     date_promoted timestamp NOT NULL DEFAULT now()
     );
+CREATE INDEX bestof_date ON bestof(date_promoted);
 
 --based on http://archives.postgresql.org/pgsql-general/2007-08/msg00702.php
 CREATE RULE "replace_quote" AS
