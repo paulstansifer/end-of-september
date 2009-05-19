@@ -36,10 +36,10 @@ def emit_full_page(self):
         with div(style='text-align: center; padding-bottom: 1px',
                  child_sep=" | "):
           if self.dc.has_key('username'): #these don't make sense without a user:
-            with link(service=Latest):
+            with link(service=drct.Latest):
               txt("read")
               img(alt='', src='/static/read.png')
-            with link(service=Compose):
+            with link(service=drct.Compose):
               txt("write")
               img(alt='', src='/static/write.png')
           with link(service=drct.Dummy):
@@ -160,11 +160,11 @@ class ArticleTools: #for mixing in with Service
              idc='tools', css='tools'):
       if self.dc.has_key('terms'):
         terms = self.dc['terms']
-        button(dc={'terms': terms}, service=Vote, replace='tools',
+        button(dc={'terms': terms}, service=drct.Vote, replace='tools',
                label='... for "%s"' % self.dc['terms'])
 
       if voted_for:
-        with link(service=Article): txt("permalink")
+        with link(service=drct.Article): txt("permalink")
         entity('mdash')
         txt(human_friendly.render_timedelta(datetime.now()
                                             - post.date_posted))
@@ -172,7 +172,7 @@ class ArticleTools: #for mixing in with Service
         user_link(texas.get_user(post.uid).name)
         button(service=drct.Dummy, label='Good quote', replace='post')
         txt(" ")
-      button(service=Vote, label='Worth the read', replace='tools',
+      button(service=drct.Vote, label='Worth the read', replace='tools',
              disabled=voted_for)
 
       br()
@@ -246,9 +246,6 @@ def user_link(username):
     
 
 #### Service implementations ####
-urls = []
-
-urls += ['/users/([^/]+)/login', 'Login']
 class Login(Get, Service, UserTools):
   def get_exec(self, username): #probably should be POST, when we make it work for real
     self.dc['uid'] = texas.get_uid_from_name(username)
@@ -259,14 +256,13 @@ class Login(Get, Service, UserTools):
 
   def mainstream(self): pass #TODO: this is a hack -- we should prevent rendering
 
-urls += ['/users/([^/]+)/logout', 'Logout']
+
 class Logout(Get, Service, UserTools):
   def get_exec(self): #is this a GET?  Everyone makes this sort of thing a link
     self.logout()
     web.seeother('/bestof')
 
 
-urls += ['/users', 'Users']
 class Users(Post, Service, UserTools):
   def post_exec(self):
     inp = web.input()
@@ -280,7 +276,6 @@ class Users(Post, Service, UserTools):
 
   def mainstream(self): pass
 
-urls += ['/users/([^/]+)/history/(\d+)', 'History']
 
 class History(Get, AJAXService, UserTools, ArticleTools):
   def get_exec(self, username, pos):
@@ -290,22 +285,18 @@ class History(Get, AJAXService, UserTools, ArticleTools):
     self.dc['pos'] = int(pos) #TODO error check 
     self.posts = texas.get_history(self.dc['uid'], self.dc['pos'])
 
-  @classmethod
-  def url(cls, tag):
-    return "/users/%s/history/%s" % (tag.get_dc('username'),
-                                     tag.get_dc('pos'))
   def navvers(self):
     if self.dc['pos'] > 0:
-      with link(style='float: left;', service=OlderHistory):
+      with link(style='float: left;', service=drct.OlderHistory):
         entity('larr'); txt("older")
     if self.dc['pos'] == self.dc['user'].latest_batch:
-      button(style='float: right', service=Latest, 
+      button(style='float: right', service=drct.Latest, 
              label='gather new articles')
     elif self.dc['pos'] == self.dc['user'].latest_batch-1:
-        with link(style='float: right;', service=Latest):
+        with link(style='float: right;', service=drct.Latest):
           txt("most recent"); entity('rarr')
     else:
-        with link(style='float: right;', service=NewerHistory):
+        with link(style='float: right;', service=drct.NewerHistory):
           txt("newer"); entity('rarr')
     div(style='clear: both;')
       
@@ -322,27 +313,8 @@ class History(Get, AJAXService, UserTools, ArticleTools):
     with paragraph():
       txt("Good times, eh?")
 
-class OlderHistory(History):
-  @classmethod
-  def url(cls, tag):
-    return "/users/%s/history/%s" % (tag.get_dc('username'),
-                                    tag.get_dc('pos')-1)
-class NewerHistory(History):
-  @classmethod
-  def url(cls, tag):
-    return "/users/%s/history/%s" % (tag.get_dc('username'),
-                                    tag.get_dc('pos')+1)  
 
-urls += ['/users/([^/]+)/latest', 'Latest']
 class Latest(History, Post):
-  @classmethod
-  def url(cls, doc):
-    return "/users/%s/latest" % doc.get_dc('username')
-
-  @classmethod
-  def js(cls, url, doc): #TODO: 'main_status' could be defined in a better place
-    return ("ajax_replace('stream', '%s', 'main_status', 'POST', null)" % url)
-
   def get_exec(self, username): #retrieve the most recent front page
     self.dc['username'] = username
     self.auth()
@@ -352,17 +324,14 @@ class Latest(History, Post):
     self.fresh = False
     self.posts = texas.get_history(self.dc['uid'], pos)
 
-
   def post_exec(self, username): #gather new articles
     self.dc['username'] = username
     self.auth()
-
     count = int(self.maybe_param('articles', 6))
     if not 1 < count <= 25:
       count = 6
 
     self.posts = online.gather(self.dc['user'], texas)[0:count]
-
     self.fresh = True
 
     if len(self.posts) > 0:
@@ -374,14 +343,12 @@ class Latest(History, Post):
     for i, post in enumerate(self.posts):
       texas.add_to_history(self.dc['uid'], post.id, pos, i)
 
-    self.auth()
-
   def mainstream(self):
     if not self.fresh:
       with div(style='text-align: center;'):
         with italic():
           txt("You've seen these already.  You can ")
-          button(service=Latest, label='gather new articles')
+          button(service=drct.Latest, label='gather new articles')
     posts = self.posts
 
     for post in posts:
@@ -431,11 +398,6 @@ class Article(Get, Post, Service, UserTools, ArticleTools):
     texas.fill_out_post(pid, self.dc['uid'],
                         self.param('claim'), self.param('body'))
     self.post = texas.get_post(pid, content=True) #and let's take a look at it
-    
-
-  @classmethod
-  def url(cls, doc):
-    return "/articles/"+str(doc.get_dc('pid'))
 
   def mainstream(self):
     self.emit_post(self.post, expose=True)
@@ -445,10 +407,8 @@ class Article(Get, Post, Service, UserTools, ArticleTools):
       txt("Lookit that article!  Ain't it a beaut?")
     else:
       txt("This post is a draft, so it's only visible to you.  You can ")
-      with link(service=Compose): txt("edit or publish your drafts.")
+      with link(service=drct.Compose): txt("edit or publish your drafts.")
       
-
-urls += ['/compose', 'Compose']
 
 class Compose(Get, Service, UserTools):
   def get_exec(self):
@@ -459,14 +419,10 @@ class Compose(Get, Service, UserTools):
     if len(self.drafts) == 0:
       self.drafts = [texas.get_post(
         texas.create_empty_post(self.dc['uid']), content=True)]
-    
-  @classmethod
-  def url(cls, doc):
-    return '/compose'
 
   def mainstream(self):
     for draft in self.drafts:
-      with form(service=Article, css='post', idc='draft',
+      with form(service=drct.Article, css='post', idc='draft',
                 dc={'ctxid': draft.id, 'pid': draft.id}):
         with h2():
           with span(css='posttitle'):
@@ -495,8 +451,6 @@ class Compose(Get, Service, UserTools):
 class cookie_session: pass
 class normal_style: pass
 
-urls += []
-
 class Search(Post, Service, UserTools, ArticleTools):
   def post_exec(self):
     terms = inp.search
@@ -522,32 +476,6 @@ class Search(Post, Service, UserTools, ArticleTools):
     #TODO: figure out whether we're Bayesian or fulltext fallback
     txt("Search!  It's complicated.")
 
-    
-
-class search_results(cookie_session, normal_style):
-  def GET(self, username):
-    inp = web.input()
-    terms = inp.search
-
-    uid = self.uid_from_cookie(username) #TODO error handling
-    user = texas.get_user(uid)
-
-    if inp.local:
-      results = search.local_search(user.cid, terms, inp.recent)
-    else:
-      results = search.global_search(terms, inp.recent)
-
-    content = ""
-    for i, result in enumerate(results):
-      texas.add_to_history(uid, result.post.id, user.latest_batch, i)
-      content += emit_post(result.post, uid, terms, {"score": result.score})
-
-    #TODO inc. batch
-      
-    sidebar = render.search_sidebar(inp.local)
-    self.package(sidebar, content, uid < 10, username, js_files=['citizen.js'])
-
-urls += [r'/articles/([0-9]+)/wtr', 'Vote']
 
 class Vote(Post, AJAXService, UserTools, ArticleTools):
   def post_exec(self, pid):
@@ -561,17 +489,6 @@ class Vote(Post, AJAXService, UserTools, ArticleTools):
     if self.has_param('term'):
       texas.add_term(self.dc['uid'], pid, self.param('term'))
 
-  @classmethod
-  def url(cls, doc):
-    return "/articles/"+str(doc.get_dc('pid'))+"/wtr"
-
-  @classmethod
-  def js(cls, url, doc): #TODO: is there a way to plumb 'tools' nicely?
-    ctxid = doc.get_dc('ctxid')
-    return ("ajax_replace('tools%d', '%s', '%s', 'POST'," %
-      (ctxid, url, doc.get_dc('status_area')+str(ctxid)) +
-            "function(){add_recent_wtr(%d)});" % ctxid)
-
   def mainstream(self):
     log_tmp('mainstream')
     self.emit_post(self.post, expose=True)
@@ -579,18 +496,13 @@ class Vote(Post, AJAXService, UserTools, ArticleTools):
   def mainchunk(self):
     self.emit_vote_tools(self.post, voted_for=True)
     
-urls += ['/articles/([0-9]+)/quote', 'Quote']
-
 class Quote(Post, AJAXService, UserTools, ArticleTools):
   def post_exec(self, pid):
     self.auth()
-
     texas.add_callout_text(pid, self.dc['uid'], self.param('text'))
 
   def mainstream(self):
     '''Just a status message here for successful quotings.'''
-
-urls += ['/bestof/([0-9]{4})-([0-9]{2})-([0-9]{2})', 'BestOfHistory']
 
 class BestOfHistory(Get, Service, UserTools, ArticleTools):
   def get_exec(self, year, month, day):
@@ -599,21 +511,17 @@ class BestOfHistory(Get, Service, UserTools, ArticleTools):
     self.posts = texas.get_best_of(self.dc['date'])
 
   def navvers(self):
-    with link(style='float: left;', service=OlderBestOf):
+    with link(style='float: left;', service=drct.OlderBestOf):
       entity('larr'); txt("older")
     if self.dc['date'] != date.today():
       if self.dc['date'] == date.today() - timedelta(1):
-        with link(style='float: right;', service=LatestBestOf):
+        with link(style='float: right;', service=drct.LatestBestOf):
           txt("today"); entity('rarr')
       else:
-        with link(style='float: right;', service=NewerBestOf):
+        with link(style='float: right;', service=drct.NewerBestOf):
           txt("newer"); entity('rarr')
     div(style='clear: both;')
     
-  @classmethod
-  def url(cls, tag):
-    return "/bestof/" + tag.get_dc('date').isoformat()
-
   def mainstream(self):
     for post in self.posts:
       self.emit_post(post)
@@ -624,43 +532,14 @@ class BestOfHistory(Get, Service, UserTools, ArticleTools):
       txt("Four times a day, we gather three of the best articles and put them here.")
 
 
-
-urls += ['/bestof', 'LatestBestOf']
 class LatestBestOf(BestOfHistory):
   def get_exec(self):
     self.try_auth()    
     self.dc['date'] = date.today()
     self.posts = texas.get_best_of(self.dc['date'])
 
-  @classmethod
-  def url(cls, tag):
-    return "/bestof"
 
-class NewerBestOf(BestOfHistory):
-  @classmethod
-  def url(cls, tag):
-    return "/bestof/" + (tag.get_dc('date') + timedelta(1)).isoformat()
-
-class OlderBestOf(BestOfHistory):
-  @classmethod
-  def url(cls, tag):
-    return "/bestof/" + (tag.get_dc('date') - timedelta(1)).isoformat()
-
-class recluster:
-  def GET(self):
-    cluster_assignments = engine.cluster_by_votes(texas)
-    texas.applyclusters(cluster_assignments)
-    print 'Clusters reassigned'
-    #TODO throw in some diagnostic
-    #for uid in texas.users: print texas.users[uid]
-
-class favicon:
-  def GET(self):
-    print open('static/fg.ico', 'r').read()
-    
-def not_found():
-  print render.not_found()
-
+#TODO: use this to control verbosity, again
 def config(wsgifunc):
   bb = BitBucket()
   def ret_val(env, start_resp):
@@ -672,7 +551,7 @@ def config(wsgifunc):
 def serve():
   web.webapi.internalerror = web.debugerror
   
-  app = web.application(urls, globals())
+  app = web.application(drct.urls, globals())
   app.run()
   
 if __name__ == "__main__":

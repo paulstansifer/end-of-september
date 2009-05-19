@@ -172,7 +172,7 @@ class link(tag):
 class js_link(tag):
   def emit(self):
     self._add_css('js_link') #hidden by default, js exposes?
-    js_call = self.attrs.pop('fn')(self)
+    js_call = self.attrs.pop('fn').client_js(self)
     #before = self.attrs.pop('before', '')
     #after = self.attrs.pop('after', '')
     return "<a href='javascript:%s'%s>%s</a>" % (
