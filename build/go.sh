@@ -19,6 +19,7 @@ fi
 
 export PYTHONPATH="$YB"
 
+
 # Start something
 if [ "$1" = "tg" ]; then
     python $OPT $YB/frontend/terminalgray.py;
@@ -31,7 +32,7 @@ elif [ "$1" = "ut" ]; then
     for test in $YB/frontend/test*.py
     do
         echo "===== $test ====="
-        python $OPT $test
+        python $OPT $test 
     done
 
     for test in $YB/backend/test*.py

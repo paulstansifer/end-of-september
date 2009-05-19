@@ -11,16 +11,18 @@
 # This way, we can probably drastically reduce the number of
 # transactions performed per query.  But no premature optimization!
 
-from datetime import datetime, timedelta
-import re
-import random # Needed for random cluster assignment hack.  Should disappear
-
-import web # Needed for database access
-
 from frontend.log import *
 from frontend.grayservice import IllegalAction
 import search
 import online
+
+
+import web # Needed for database access
+
+from datetime import datetime, timedelta
+import re
+import random # Needed for random cluster assignment hack.  Should disappear
+
 
 class DataError(Exception):
   def __init__(self, value):
@@ -65,6 +67,7 @@ class State:
           user='yb',
 #          pw='',
           db=database)
+        #self.db.printing = False
 
         #self.ssh_client = paramiko.SSHClient()
         self.cluster_size_cache = {}

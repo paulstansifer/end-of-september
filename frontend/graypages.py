@@ -1,17 +1,18 @@
 from __future__ import with_statement
 
-import web
-from datetime import datetime, date, timedelta
-
 from backend import state, search, engine, online
 
 from html import *
+from grayservice import Service, AJAXService, Get, Post, CantAuth
 import js
 import human_friendly
-from grayservice import Service, AJAXService, Get, Post, CantAuth
 import directory as drct
+import graytools as tools
 
 from frontend.log import *
+
+import web
+from datetime import datetime, date, timedelta
 
 log_dbg("Initializing graypages . . .")
 
@@ -50,12 +51,12 @@ def emit_full_page(self):
         if self.dc.has_key('username'):
           if self.dc['uid'] < 10:  #TODO if user is 'real'
             with span():
-              txt("welcome, "); user_link(self.dc['username'])
+              txt("welcome, "); tools.user_link(self.dc['username'])
             with link(service=drct.Dummy):
               txt("log out")
           else: #guest user
             with span():
-              txt("welcome, guest user "); user_link(self.dc['username'])
+              txt("welcome, guest user "); tools.user_link(self.dc['username'])
             with link(service=drct.Dummy): txt("create permanent account")
             with link(service=drct.Dummy): txt("log in")
         else:
@@ -86,143 +87,6 @@ def emit_full_page(self):
 Service.emit_full_page = emit_full_page
 
 
-# These tools are mixins intended for use in Service s
-
-class UserTools:
-  def auth(self):
-    '''Returns the uid, if the user is logged in.  If the username is
-provided (e.g., from a URL), try that one.  Otherwise, check the
-cookies for the last session.  
-
-Require a proper login with a password before doing anything
-serious/unreversable.'''
-
-    cookies = web.cookies()
-
-    if self.dc.has_key('username'):
-      name = self.dc.pop('username') #will be reinstated if we validate
-    elif cookies.has_key('name'):
-      name = cookies['name']
-    else:
-      raise CantAuth("No username.  Are cookies enabled?")
-
-    try:
-      uid = texas.get_uid_from_name(name)
-    except DataError, e: #TODO: be specific about the exception
-      raise CantAuth("Unknown username: '%s'" % name)
-    if not cookies.has_key('ticket_for_' + str(uid)):
-      raise CantAuth("No ticket -- you are not logged in.")
-    ticket = cookies['ticket_for_' + str(uid)]
-    if not texas.check_ticket(uid, ticket):
-      raise CantAuth("Incorrect ticket.")
-
-    self.dc['username'] = name
-    self.dc['user'] = texas.get_user(uid)
-    self.dc['uid'] = uid
-
-    web.setcookie('name', name, expires=3600*24*90)
-    web.setcookie('ticket_for_'+str(uid), ticket, expires=3600*24*90)
-
-  def issue_credentials(self):
-    web.setcookie('name', self.dc['username'], expires=3600*24*90)
-    ticket = texas.make_ticket(self.dc['uid'])
-    web.setcookie('ticket_for_'+str(self.dc['uid']), ticket,
-                  expires=3600*24*90)
-    
-  def try_auth(self):
-    try:
-      self.auth()
-    except CantAuth, e:
-      return False
-    return True
-
-  def logout(self):
-    #TODO: refuse, unless user has an actual password to log back in with
-    if self.dc.has_key('uid'):
-      uid = self.dc['uid']
-    else:
-      try:
-        name = web.cookies()['name']
-        uid = texas.get_uid_from_name(name)
-      except KeyError, e:
-        return #Not logged in at all?
-    texas.nuke_ticket(self.dc['uid'], web.cookies(ticket_name)) #TODO: handle errors
-    web.setcookie('name', '', expires=-1)
-    web.setcookie('ticket_for_'+str(uid), '', expires=-1)
-
-
-
-class ArticleTools: #for mixing in with Service
-  def emit_vote_tools(self, post, voted_for):
-    #vote_tools can occur without a post, so it needs ctxid, too.
-    with div(dc={'ctxid': post.id, 'pid': post.id,
-                 'status_area': 'article_status'},
-             idc='tools', css='tools'):
-      if self.dc.has_key('terms'):
-        terms = self.dc['terms']
-        button(dc={'terms': terms}, service=drct.Vote, replace='tools',
-               label='... for "%s"' % self.dc['terms'])
-
-      if voted_for:
-        with link(service=drct.Article): txt("permalink")
-        entity('mdash')
-        txt(human_friendly.render_timedelta(datetime.now()
-                                            - post.date_posted))
-        txt(" ago by ")
-        user_link(texas.get_user(post.uid).name)
-        button(service=drct.Dummy, label='Good quote', replace='post')
-        txt(" ")
-      button(service=drct.Vote, label='Worth the read', replace='tools',
-             disabled=voted_for)
-
-      br()
-      div(idc='article_status')
-
-      
-  def emit_post(self, post, extras={}, expose=True):
-    #TODO: maybe, instead of this expose/non-expose crud, we should put
-    #in the whole article at first, stash the summary somewhere else,
-    #and just have JS replace as appropriate (and make replace do
-    #animation universally).  Advantage: almost all page transitions are
-    #controled by replace='' parameters...
-    exp_ctrl = ' exposed' if expose else ''
-
-    all_extras = {'score': post.broad_support, 'id': post.id}
-    all_extras.update(extras)
-
-    
-    with div(dc={'ctxid': post.id, 'pid': post.id}, css='post', idc='post', style='clear: both;'):
-      with js_link(fn=drct.Dummy, css='dismisser'):
-        img(alt='dismiss this entry', src='/static/x-icon.png')
-      with h2():
-        with span(css='posttitle', idc='claim'):
-          #with span(style='font-weight: normal;'): txt("Claim: ")
-          txt(post.claim)
-#        with js_link(fn=js.hide('content')):
-#          img(alt='hide', src='/static/x-icon.png')
-#       with div(css='sidebar'):
-#         with div(style='text-align: center; margin-bottom: 1em;'):
-#           with div(idc='sidebar_summary', css='j_summary', expose=expose,
-#                    child_sep=" | "):
-#             with js_link(fn=drct.Dummy): txt("expand")
-#             with link(service=drct.Dummy): txt("page")
-#           with div(idc='sidebar_content', css='j_content', expose=expose,
-#                    child_sep=" | "):
-#             with js_link(fn=drct.Dummy): txt("contract")
-#             with link(service=drct.Dummy): txt("page")
-#         #for k, v in all_extras.items():
-#         #  with bold(): txt(k)
-#         #  txt(": "); txt(str(v))
-#         txt("TODO notes")
-      with div(): #post body
-        with div(idc='summary', css='j_summary postbody', expose=expose):
-          txt("Fit nasal purse")
-        with div(idc='content', css='j_content postbody', expose=expose):
-          txt(post.raw())
-          if self.dc.has_key('uid'):
-            self.emit_vote_tools(post, texas.voted_for(self.dc['uid'], post.id))
-      div(style='clear: both;')
-
 
 
 # A note about dc (doc context):
@@ -233,20 +97,10 @@ class ArticleTools: #for mixing in with Service
 # creating buttons or links.  There's also the dc of the current
 # Service, which we feed to the root of the document, and is used by
 # the service itself sometimes.
-        
-
-#TODO: this iface makes no sense -- the service will need context, so
-#it's silly not to use it to get the username.  Of course, it's also
-#impossible to do so.
-def user_link(username):
-  with link(service=drct.Dummy):
-    img(alt='',  src='/static/user.png')
-    txt(username)
-
     
 
 #### Service implementations ####
-class Login(Get, Service, UserTools):
+class Login(Get, Service, tools.User):
   def get_exec(self, username): #probably should be POST, when we make it work for real
     self.dc['uid'] = texas.get_uid_from_name(username)
     self.dc['username'] = username
@@ -257,13 +111,13 @@ class Login(Get, Service, UserTools):
   def mainstream(self): pass #TODO: this is a hack -- we should prevent rendering
 
 
-class Logout(Get, Service, UserTools):
+class Logout(Get, Service, tools.User):
   def get_exec(self): #is this a GET?  Everyone makes this sort of thing a link
     self.logout()
     web.seeother('/bestof')
 
 
-class Users(Post, Service, UserTools):
+class Users(Post, Service, tools.User):
   def post_exec(self):
     inp = web.input()
     self.dc['uid'] = texas.create_user(self.param('name'),
@@ -277,7 +131,7 @@ class Users(Post, Service, UserTools):
   def mainstream(self): pass
 
 
-class History(Get, AJAXService, UserTools, ArticleTools):
+class History(Get, AJAXService, tools.User, tools.Article):
   def get_exec(self, username, pos):
     self.dc['username'] = username
     self.auth()
@@ -381,7 +235,7 @@ class Latest(History, Post):
           txt("more...")
 
 
-class Article(Get, Post, Service, UserTools, ArticleTools):
+class Article(Get, Post, Service, tools.User, tools.Article):
   def get_exec(self, pid):
     pid = int(pid)
     self.post = texas.get_post(pid, content=True)
@@ -389,7 +243,7 @@ class Article(Get, Post, Service, UserTools, ArticleTools):
 
     if not self.post.published:
       if not (self.dc.has_key('uid') and self.post.pid == self.dc['uid']):
-        raise IllegalAction("A draft post can only be viewed by its author.")
+        raise tools.IllegalAction("A draft post can only be viewed by its author.")
         
 
   def post_exec(self, pid):
@@ -410,7 +264,7 @@ class Article(Get, Post, Service, UserTools, ArticleTools):
       with link(service=drct.Compose): txt("edit or publish your drafts.")
       
 
-class Compose(Get, Service, UserTools):
+class Compose(Get, Service, tools.User):
   def get_exec(self):
     self.auth()
 
@@ -451,7 +305,7 @@ class Compose(Get, Service, UserTools):
 class cookie_session: pass
 class normal_style: pass
 
-class Search(Post, Service, UserTools, ArticleTools):
+class Search(Post, Service, tools.User, tools.Article):
   def post_exec(self):
     terms = inp.search
     self.try_auth()
@@ -477,7 +331,7 @@ class Search(Post, Service, UserTools, ArticleTools):
     txt("Search!  It's complicated.")
 
 
-class Vote(Post, AJAXService, UserTools, ArticleTools):
+class Vote(Post, AJAXService, tools.User, tools.Article):
   def post_exec(self, pid):
     log_tmp('post_exec....')
     i = web.input()
@@ -496,7 +350,7 @@ class Vote(Post, AJAXService, UserTools, ArticleTools):
   def mainchunk(self):
     self.emit_vote_tools(self.post, voted_for=True)
     
-class Quote(Post, AJAXService, UserTools, ArticleTools):
+class Quote(Post, AJAXService, tools.User, tools.Article):
   def post_exec(self, pid):
     self.auth()
     texas.add_callout_text(pid, self.dc['uid'], self.param('text'))
@@ -504,7 +358,7 @@ class Quote(Post, AJAXService, UserTools, ArticleTools):
   def mainstream(self):
     '''Just a status message here for successful quotings.'''
 
-class BestOfHistory(Get, Service, UserTools, ArticleTools):
+class BestOfHistory(Get, Service, tools.User, tools.Article):
   def get_exec(self, year, month, day):
     self.try_auth() #TODO make everything at least try_auth
     self.dc['date'] = date(int(year), int(month), int(day)) #TODO: deal with errors
@@ -550,10 +404,9 @@ def config(wsgifunc):
 
 def serve():
   web.webapi.internalerror = web.debugerror
-  
+  web.webapi.db_printing = False
   app = web.application(drct.urls, globals())
   app.run()
   
 if __name__ == "__main__":
   serve()
-

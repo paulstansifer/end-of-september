@@ -115,11 +115,10 @@ class UserVisibleException(web.webapi._NotFound, Service, Get):
      with italic():
        txt(self.msg)
 
+  
 class CantAuth(UserVisibleException):
   def mainstream(self):
     with italic():
       txt("Unable to log in: " + self.msg)
 
 class IllegalAction(UserVisibleException): pass
-
-  
